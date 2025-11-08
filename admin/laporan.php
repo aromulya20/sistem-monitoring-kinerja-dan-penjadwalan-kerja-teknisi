@@ -173,6 +173,7 @@ $laporan = $conn->query($sql_laporan);
                 <th>Deskripsi Pekerjaan</th>
                 <th>Status</th>
                 <th>Tanggal Laporan</th>
+                <th>Aksi</th>
             </tr>
             <?php if ($laporan && $laporan->num_rows > 0): ?>
                 <?php while ($row = $laporan->fetch_assoc()): ?>
@@ -183,14 +184,19 @@ $laporan = $conn->query($sql_laporan);
                     <td><?= htmlspecialchars($row['deskripsi']); ?></td>
                     <td><span class="status <?= strtolower($row['status']); ?>"><?= ucfirst($row['status']); ?></span></td>
                     <td><?= $row['tanggal_laporan']; ?></td>
+                    <td>
+                        <a href="detail_laporan.php?id=<?= $row['id_laporan']; ?>" 
+                        style="background:#3f72af;color:white;padding:6px 10px;border-radius:6px;text-decoration:none;">
+                        🔍 Detail
+                        </a>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
             <?php else: ?>
-                <tr><td colspan="6">Belum ada laporan dari teknisi.</td></tr>
+                <tr><td colspan="7" style="text-align:center;">Belum ada laporan dari teknisi.</td></tr>
             <?php endif; ?>
         </table>
     </div>
-</div>
 
 <!-- Script Chart -->
 <script>

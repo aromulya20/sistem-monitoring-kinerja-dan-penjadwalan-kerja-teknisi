@@ -249,8 +249,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
         <a href="laporan.php">📊 Laporan Kinerja</a>
         <a href="../auth/logout.php">🚪 Logout</a>
     </div>
-
-    <!-- Agung Gagah -->
     <!-- Main -->
     <div class="main">
         <header>
