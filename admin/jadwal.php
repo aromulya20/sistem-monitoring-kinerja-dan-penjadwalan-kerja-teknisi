@@ -64,7 +64,6 @@ $jadwal = $conn->query("
         display: flex;
     }
 
-    /* Sidebar */
     .sidebar {
         width: 240px;
         background-color: #3f72af;
@@ -89,7 +88,6 @@ $jadwal = $conn->query("
         background-color: #2e5c8a;
     }
 
-    /* Main content */
     .main-content {
         margin-left: 240px;
         padding: 30px;

@@ -65,7 +65,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
             overflow: hidden;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 240px;
             background-color: var(--primary);
@@ -99,10 +98,8 @@ while ($row = $laporanQuery->fetch_assoc()) {
             background-color: #2e5c8a;
         }
 
-        /* Main Area */
         .main {
             margin-left: 240px;
-            /* penting agar tidak tertutup sidebar */
             width: calc(100% - 240px);
             display: flex;
             flex-direction: column;
@@ -110,7 +107,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
             background-color: var(--light-bg);
         }
 
-        /* Header */
         header {
             background-color: var(--white);
             padding: 15px 30px;
@@ -143,7 +139,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
             background: #c0392b;
         }
 
-        /* Content */
         .content {
             padding: 30px;
             overflow-y: auto;
@@ -214,7 +209,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
             }
         }
 
-        /* Responsive Sidebar */
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
@@ -238,7 +232,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
 </head>
 
 <body>
-    <!-- Sidebar -->
     <div class="sidebar">
         <h2>🔧 Sismontek</h2>
         <a href="dashboard.php" class="active">🏠 Home</a>
@@ -249,7 +242,7 @@ while ($row = $laporanQuery->fetch_assoc()) {
         <a href="laporan.php">📊 Laporan Kinerja</a>
         <a href="../auth/logout.php">🚪 Logout</a>
     </div>
-    <!-- Main -->
+
     <div class="main">
         <header>
             <h2>Dashboard Admin</h2>
@@ -264,7 +257,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
                 </div>
             </div>
 
-            <!-- Tabel Jadwal -->
             <div class="card">
                 <h3>Tugas Teknisi Terbaru</h3>
                 <table>
@@ -297,7 +289,6 @@ while ($row = $laporanQuery->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- SCRIPT CHART -->
     <script>
         // === Chart Batang (Status Jadwal) ===
         new Chart(document.getElementById('statusChart'), {
