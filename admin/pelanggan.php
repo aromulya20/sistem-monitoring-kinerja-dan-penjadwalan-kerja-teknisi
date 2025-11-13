@@ -7,7 +7,7 @@ if (!isset($_SESSION['username'])) {
 include '../database/config.php';
 
 // ================== PROSES TAMBAH PELANGGAN ==================
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['tambah'])) {
     $nama_pelanggan = $_POST['nama_pelanggan'];
     $alamat = $_POST['alamat'];
     $telepon = $_POST['nomer_telepon'];
@@ -21,6 +21,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $success = "✅ Data pelanggan berhasil ditambahkan!";
     } else {
         $error = "❌ Terjadi kesalahan: " . $conn->error;
+    }
+}
+
+// ================== PROSES HAPUS PELANGGAN ==================
+if (isset($_GET['hapus'])) {
+    $id = $_GET['hapus'];
+    $conn->query("DELETE FROM pelanggan WHERE id_pelanggan = '$id'");
+    header("Location: pelanggan.php");
+    exit;
+}
+
+// ================== PROSES EDIT PELANGGAN ==================
+$editMode = false;
+if (isset($_GET['edit'])) {
+    $editMode = true;
+    $id_edit = $_GET['edit'];
+    $result = $conn->query("SELECT * FROM pelanggan WHERE id_pelanggan = '$id_edit'");
+    $editData = $result->fetch_assoc();
+}
+
+if (isset($_POST['update'])) {
+    $id_pelanggan = $_POST['id_pelanggan'];
+    $nama_pelanggan = $_POST['nama_pelanggan'];
+    $alamat = $_POST['alamat'];
+    $telepon = $_POST['nomer_telepon'];
+    $email = $_POST['email'];
+    $paket = $_POST['paket'];
+
+    $sql_update = "UPDATE pelanggan SET 
+        nama_pelanggan='$nama_pelanggan',
+        alamat='$alamat',
+        nomer_telepon='$telepon',
+        email='$email',
+        paket='$paket'
+        WHERE id_pelanggan='$id_pelanggan'";
+
+    if ($conn->query($sql_update)) {
+        header("Location: pelanggan.php");
+        exit;
+    } else {
+        $error = "❌ Gagal memperbarui data: " . $conn->error;
     }
 }
 
@@ -163,6 +204,19 @@ $pelanggan = $conn->query("SELECT * FROM pelanggan ORDER BY id_pelanggan DESC");
             background: #ffebee;
             color: #c62828;
         }
+
+        .action-link {
+            text-decoration: none;
+            margin-right: 8px;
+        }
+
+        .edit-link {
+            color: blue;
+        }
+
+        .delete-link {
+            color: red;
+        }
     </style>
 </head>
 
@@ -184,42 +238,49 @@ $pelanggan = $conn->query("SELECT * FROM pelanggan ORDER BY id_pelanggan DESC");
     <div class="main-content">
         <h1>Manajemen Data Pelanggan</h1>
 
-        <?php if (isset($success))
-            echo "<div class='alert success'>$success</div>"; ?>
-        <?php if (isset($error))
-            echo "<div class='alert error'>$error</div>"; ?>
+        <?php if (isset($success)) echo "<div class='alert success'>$success</div>"; ?>
+        <?php if (isset($error)) echo "<div class='alert error'>$error</div>"; ?>
 
-        <!-- Form Input Pelanggan -->
+        <!-- Form Input/Edit Pelanggan -->
         <div class="form-card">
-            <h3>Tambah Pelanggan Baru</h3>
+            <h3><?= $editMode ? '✏️ Edit Data Pelanggan' : '➕ Tambah Pelanggan Baru'; ?></h3>
             <form method="POST" action="">
+                <?php if ($editMode): ?>
+                    <input type="hidden" name="id_pelanggan" value="<?= $editData['id_pelanggan']; ?>">
+                <?php endif; ?>
+
                 <label for="nama_pelanggan">Nama Pelanggan</label>
-                <input type="text" name="nama_pelanggan" required>
+                <input type="text" name="nama_pelanggan" required value="<?= $editMode ? $editData['nama_pelanggan'] : ''; ?>">
 
                 <label for="alamat">Alamat</label>
-                <textarea name="alamat" rows="3" required></textarea>
+                <textarea name="alamat" rows="3" required><?= $editMode ? $editData['alamat'] : ''; ?></textarea>
 
-                <label for="nomer_telepon">Nomer Telepon</label>
-                <input type="text" name="nomer_telepon" required>
+                <label for="nomer_telepon">Nomor Telepon</label>
+                <input type="text" name="nomer_telepon" required value="<?= $editMode ? $editData['nomer_telepon'] : ''; ?>">
 
                 <label for="email">Email</label>
-                <input type="email" name="email" required>
+                <input type="email" name="email" required value="<?= $editMode ? $editData['email'] : ''; ?>">
 
                 <label for="paket">Paket Layanan</label>
                 <select name="paket" required>
                     <option value="">-- Pilih Paket --</option>
-                    <option value="Basic">Basic</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Premium">Premium</option>
+                    <option value="Basic" <?= $editMode && $editData['paket'] == 'Basic' ? 'selected' : ''; ?>>Basic</option>
+                    <option value="Standard" <?= $editMode && $editData['paket'] == 'Standard' ? 'selected' : ''; ?>>Standard</option>
+                    <option value="Premium" <?= $editMode && $editData['paket'] == 'Premium' ? 'selected' : ''; ?>>Premium</option>
                 </select>
 
-                <button type="submit">+ Tambah Pelanggan</button>
+                <?php if ($editMode): ?>
+                    <button type="submit" name="update">💾 Simpan Perubahan</button>
+                    <a href="pelanggan.php" class="action-link" style="margin-left:10px;">❌ Batal</a>
+                <?php else: ?>
+                    <button type="submit" name="tambah">+ Tambah Pelanggan</button>
+                <?php endif; ?>
             </form>
         </div>
 
         <!-- Tabel Pelanggan -->
         <div class="table-card">
-            <h3>Daftar Pelanggan</h3>
+            <h3>📋 Daftar Pelanggan</h3>
             <table>
                 <tr>
                     <th>ID</th>
@@ -228,6 +289,7 @@ $pelanggan = $conn->query("SELECT * FROM pelanggan ORDER BY id_pelanggan DESC");
                     <th>Telepon</th>
                     <th>Email</th>
                     <th>Paket</th>
+                    <th>Aksi</th>
                 </tr>
                 <?php if ($pelanggan && $pelanggan->num_rows > 0): ?>
                     <?php while ($p = $pelanggan->fetch_assoc()): ?>
@@ -238,12 +300,14 @@ $pelanggan = $conn->query("SELECT * FROM pelanggan ORDER BY id_pelanggan DESC");
                             <td><?= $p['nomer_telepon']; ?></td>
                             <td><?= $p['email']; ?></td>
                             <td><?= $p['paket']; ?></td>
+                            <td>
+                                <a href="?edit=<?= $p['id_pelanggan']; ?>" class="action-link edit-link">✏️ Edit</a>
+                                <a href="?hapus=<?= $p['id_pelanggan']; ?>" class="action-link delete-link" onclick="return confirm('Yakin ingin menghapus data ini?');">🗑 Hapus</a>
+                            </td>
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <tr>
-                        <td colspan="6">Belum ada data pelanggan.</td>
-                    </tr>
+                    <tr><td colspan="7" style="text-align:center;">Belum ada data pelanggan.</td></tr>
                 <?php endif; ?>
             </table>
         </div>
