@@ -27,6 +27,7 @@ $sql = "
     JOIN pengguna u ON t.id_pengguna = u.id_pengguna
     WHERE l.id_laporan = '$id_laporan'
 ";
+
 $result = $conn->query($sql);
 if (!$result || $result->num_rows == 0) {
     echo "Data tidak ditemukan.";
@@ -40,73 +41,140 @@ $data = $result->fetch_assoc();
 <head>
 <meta charset="UTF-8">
 <title>Detail Laporan | Sismontek</title>
+
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f4f6f9;
-    padding: 40px;
-}
-.container {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    max-width: 700px;
-    margin: auto;
-}
-h2 {
-    color: #3f72af;
-    text-align: center;
-    margin-bottom: 25px;
-}
-.detail-box {
-    margin-bottom: 15px;
-}
-.detail-box strong {
-    color: #112d4e;
-}
-img {
-    width: 100%;
-    max-height: 350px;
-    border-radius: 10px;
-    object-fit: cover;
-    margin-top: 10px;
-}
-a.button {
-    display: inline-block;
-    margin-top: 20px;
-    text-decoration: none;
-    padding: 10px 15px;
-    background-color: #3f72af;
-    color: white;
-    border-radius: 8px;
-}
-a.button:hover { background-color: #2e5c8a; }
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #eef2f7;
+        padding: 40px;
+    }
+
+    .container {
+        background: white;
+        padding: 35px;
+        border-radius: 14px;
+        max-width: 900px;
+        margin: auto;
+        box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 35px;
+        color: #1f3c88;
+        letter-spacing: 1px;
+        font-size: 26px;
+        font-weight: 600;
+    }
+
+    .section-title {
+        font-size: 18px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #1f3c88;
+        border-left: 4px solid #3f72af;
+        padding-left: 10px;
+    }
+
+    .info-box {
+        background: #f8faff;
+        border: 1px solid #d7e3fc;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .info-item strong {
+        color: #112d4e;
+    }
+
+    .kendala-box {
+        background: #fff6e6;
+        padding: 15px;
+        border-left: 4px solid #ffa502;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
+
+    img {
+        width: 100%;
+        max-height: 380px;
+        border-radius: 12px;
+        object-fit: cover;
+        margin-top: 10px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .back-btn {
+        display: inline-block;
+        padding: 10px 18px;
+        margin-top: 25px;
+        background: #1f3c88;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: 0.3s;
+    }
+
+    .back-btn:hover {
+        background: #163276;
+    }
 </style>
+
 </head>
 <body>
+
 <div class="container">
+
     <h2>📋 Detail Laporan Teknisi</h2>
 
-    <div class="detail-box"><strong>Nama Pelanggan:</strong> <?= htmlspecialchars($data['nama_pelanggan']); ?></div>
-    <div class="detail-box"><strong>Alamat:</strong> <?= htmlspecialchars($data['alamat']); ?></div>
-    <div class="detail-box"><strong>No. Telepon:</strong> <?= htmlspecialchars($data['nomer_telepon']); ?></div>
-    <div class="detail-box"><strong>Email:</strong> <?= htmlspecialchars($data['email']); ?></div>
-    <hr>
-    <div class="detail-box"><strong>Nama Teknisi:</strong> <?= htmlspecialchars($data['nama_teknisi']); ?></div>
-    <div class="detail-box"><strong>Deskripsi Pekerjaan:</strong> <?= htmlspecialchars($data['deskripsi_pekerjaan']); ?></div>
-    <div class="detail-box"><strong>Status:</strong> <?= ucfirst($data['status']); ?></div>
-    <div class="detail-box"><strong>Tanggal Laporan:</strong> <?= htmlspecialchars($data['tanggal_laporan']); ?></div>
-    <div class="detail-box"><strong>Kendala:</strong><br><?= nl2br(htmlspecialchars($data['kendala'])); ?></div>
+    <!-- ======================== DATA PELANGGAN =========================== -->
+    <div class="section-title">Informasi Pelanggan</div>
+    <div class="info-box info-grid">
+        <div class="info-item"><strong>Nama Pelanggan:</strong><br><?= htmlspecialchars($data['nama_pelanggan']); ?></div>
+        <div class="info-item"><strong>Email:</strong><br><?= htmlspecialchars($data['email']); ?></div>
+        <div class="info-item"><strong>No. Telepon:</strong><br><?= htmlspecialchars($data['nomer_telepon']); ?></div>
+        <div class="info-item"><strong>Alamat:</strong><br><?= htmlspecialchars($data['alamat']); ?></div>
+    </div>
 
-    <?php if (!empty($data['foto_bukti'])): ?>
-        <div class="detail-box">
-            <strong>Foto Bukti:</strong><br>
-            <img src="../uploads/<?= htmlspecialchars($data['foto_bukti']); ?>" alt="Foto Bukti">
+    <!-- ======================== DATA TEKNISI =========================== -->
+    <div class="section-title">Informasi Teknisi</div>
+    <div class="info-box info-grid">
+        <div class="info-item"><strong>Nama Teknisi:</strong><br><?= htmlspecialchars($data['nama_teknisi']); ?></div>
+        <div class="info-item"><strong>Status Pekerjaan:</strong><br><?= ucfirst($data['status']); ?></div>
+    </div>
+
+    <!-- ======================== DATA PEKERJAAN =========================== -->
+    <div class="section-title">Detail Pekerjaan</div>
+    <div class="info-box">
+        <strong>Deskripsi Pekerjaan:</strong><br>
+        <?= nl2br(htmlspecialchars($data['deskripsi_pekerjaan'])); ?>
+
+        <br><br>
+        <strong>Tanggal Laporan:</strong><br><?= htmlspecialchars($data['tanggal_laporan']); ?>
+
+        <br><br>
+        <strong>Kendala:</strong>
+        <div class="kendala-box">
+            <?= nl2br(htmlspecialchars($data['kendala'])); ?>
         </div>
+    </div>
+
+    <!-- ======================== FOTO BUKTI =========================== -->
+    <?php if (!empty($data['foto_bukti'])): ?>
+        <div class="section-title">Foto Bukti</div>
+        <img src="../uploads/<?= htmlspecialchars($data['foto_bukti']); ?>" alt="Foto Bukti">
     <?php endif; ?>
 
-    <a href="laporan.php" class="button">⬅ Kembali</a>
+    <a href="laporan.php" class="back-btn">⬅ Kembali</a>
 </div>
+
 </body>
 </html>
