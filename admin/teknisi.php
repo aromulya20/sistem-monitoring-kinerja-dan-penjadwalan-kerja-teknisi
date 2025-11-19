@@ -7,9 +7,7 @@ if (!isset($_SESSION['username'])) {
 
 include '../database/config.php';
 
-/* ============================================================
-   ================ DELETE DATA TEKNISI ========================
-   ============================================================ */
+/* ================ DELETE DATA TEKNISI ======================== */
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
     $conn->query("DELETE FROM teknisi WHERE id_teknisi = '$id'");
@@ -17,9 +15,7 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
-/* ============================================================
-   ================ AMBIL DATA TEKNISI =========================
-   ============================================================ */
+/* ================ AMBIL DATA TEKNISI ========================= */
 $pengguna = $conn->query("SELECT id_pengguna, nama FROM pengguna WHERE role = 'teknisi'");
 
 $teknisi = $conn->query("
@@ -29,9 +25,7 @@ $teknisi = $conn->query("
     ORDER BY t.id_teknisi DESC
 ");
 
-/* ============================================================
-   ================ MODE EDIT =========================
-   ============================================================ */
+  /* ================ MODE EDIT =========================*/
 $editMode = false;
 $editData = null;
 
@@ -44,9 +38,7 @@ if (isset($_GET['edit'])) {
     ")->fetch_assoc();
 }
 
-/* ============================================================
-   ================ PROSES SIMPAN / UPDATE ====================
-   ============================================================ */
+/*================ PROSES SIMPAN / UPDATE ====================*/
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $id_pengguna = $_POST['id_pengguna'];
