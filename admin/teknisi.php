@@ -56,72 +56,118 @@ if ($_SERVER['REQUEST_METHOD']=="POST") {
 <meta charset="UTF-8">
 <title>Manajemen Teknisi | SISMONTEK</title>
 
+<!-- Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <style>
+:root{
+ --bg:#f5f7fb;
+ --card:#ffffff;
+ --border:#e5e7eb;
+ --text:#0f172a;
+ --muted:#64748b;
+ --primary:#2563eb;
+ --danger:#dc2626;
+}
+
+*{box-sizing:border-box}
 body{
  margin:0;
- font-family:Poppins,Arial;
- background:#f5f7fb;
- display:flex;
+ font-family:Inter,sans-serif;
+ background:var(--bg);
+ color:var(--text);
 }
-
-
 
 /* ===== MAIN ===== */
-
-
-h1{color:#1e40af;margin-bottom:20px;}
-
-.card{
- background:#fff;
- border-radius:14px;
- padding:24px;
- margin-bottom:25px;
- box-shadow:0 8px 20px rgba(0,0,0,.06);
+main{
+ margin-left:260px;
+ padding:32px;
+ min-height:100vh;
 }
 
-.card h3{margin-top:0;color:#1e40af;}
+h1{
+ font-size:24px;
+ font-weight:700;
+ margin-bottom:24px;
+}
+
+/* ===== CARD ===== */
+.card{
+ background:var(--card);
+ border-radius:16px;
+ padding:24px;
+ margin-bottom:28px;
+ box-shadow:0 10px 30px rgba(0,0,0,.06);
+}
+.card h3{
+ margin:0 0 16px;
+ font-size:18px;
+ font-weight:600;
+}
 
 /* ===== FORM ===== */
+label{
+ font-size:13px;
+ color:var(--muted);
+}
 input,select,textarea{
  width:100%;
- padding:10px;
- margin-top:8px;
- border-radius:8px;
- border:1px solid #d1d5db;
+ border:1px solid var(--border);
+ border-radius:12px;
+ padding:12px;
+ margin:8px 0 16px;
+ font-size:14px;
 }
 
 button{
  background:#2563eb;
  color:#fff;
  border:none;
- padding:10px 22px;
- border-radius:8px;
+ padding:12px 28px;
+ border-radius:999px;
+ font-weight:500;
  cursor:pointer;
- margin-top:15px;
 }
 
-button:hover{background:#1e40af;}
-
 /* ===== TABLE ===== */
-table{width:100%;border-collapse:collapse;}
+table{
+ width:100%;
+ border-collapse:collapse;
+}
 th{
  background:#2563eb;
  color:#fff;
- padding:10px;
+ padding:12px;
+ text-align:left;
+ font-size:13px;
 }
 td{
- padding:10px;
- border-bottom:1px solid #e5e7eb;
+ padding:12px;
+ border-bottom:1px solid var(--border);
+ font-size:14px;
 }
 
+/* ===== ACTION ===== */
 .action a{
+ padding:8px 14px;
+ border-radius:999px;
+ font-size:12px;
  text-decoration:none;
- margin-right:8px;
  font-weight:500;
+ margin-right:6px;
 }
-
-.edit{color:#2563eb;}
-.delete{color:#dc2626;}
+.edit{
+ background:rgba(37,99,235,.15);
+ color:var(--primary);
+}
+.delete{
+ background:rgba(220,38,38,.15);
+ color:var(--danger);
+}
 </style>
 </head>
 
@@ -129,19 +175,20 @@ td{
 
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<!-- CONTENT -->
-<div class="main">
-  <button class="menu" onclick="sidebar.classList.toggle('show')">☰</button>
+<main>
+
 <h1>Manajemen Teknisi</h1>
 
 <div class="card">
 <h3><?= $editMode ? "Edit Teknisi" : "Tambah Teknisi" ?></h3>
 
 <form method="post">
+
 <?php if($editMode): ?>
 <input type="hidden" name="update_id" value="<?= $editData['id_teknisi'] ?>">
 <?php endif; ?>
 
+<label>Nama Teknisi</label>
 <select name="id_pengguna" required>
 <option value="">Pilih Teknisi</option>
 <?php while($p=$pengguna->fetch_assoc()):
@@ -151,10 +198,17 @@ $sel=$editMode && $editData['id_pengguna']==$p['id_pengguna']?'selected':'';
 <?php endwhile; ?>
 </select>
 
-<input type="text" name="no_hp" placeholder="No HP" required value="<?= $editMode?$editData['no_hp']:'' ?>">
-<textarea name="alamat" placeholder="Alamat"><?= $editMode?$editData['alamat']:'' ?></textarea>
+<label>No HP</label>
+<input type="text" name="no_hp" required value="<?= $editMode?$editData['no_hp']:'' ?>">
 
-<button><?= $editMode?"Simpan Perubahan":"Tambah Teknisi" ?></button>
+<label>Alamat</label>
+<textarea name="alamat"><?= $editMode?$editData['alamat']:'' ?></textarea>
+
+<button>
+<i class="fa-solid fa-floppy-disk"></i>
+<?= $editMode?"Simpan Perubahan":"Tambah Teknisi" ?>
+</button>
+
 </form>
 </div>
 
@@ -163,8 +217,13 @@ $sel=$editMode && $editData['id_pengguna']==$p['id_pengguna']?'selected':'';
 
 <table>
 <tr>
-<th>ID</th><th>Nama</th><th>No HP</th><th>Alamat</th><th>Aksi</th>
+<th>ID</th>
+<th>Nama</th>
+<th>No HP</th>
+<th>Alamat</th>
+<th>Aksi</th>
 </tr>
+
 <?php if($teknisi->num_rows>0): while($t=$teknisi->fetch_assoc()): ?>
 <tr>
 <td><?= $t['id_teknisi'] ?></td>
@@ -172,16 +231,24 @@ $sel=$editMode && $editData['id_pengguna']==$p['id_pengguna']?'selected':'';
 <td><?= $t['no_hp'] ?></td>
 <td><?= $t['alamat'] ?></td>
 <td class="action">
-<a class="edit" href="?edit=<?= $t['id_teknisi'] ?>">Edit</a>
-<a class="delete" href="?delete=<?= $t['id_teknisi'] ?>" onclick="return confirm('Hapus data?')">Hapus</a>
+<a class="edit" href="?edit=<?= $t['id_teknisi'] ?>">
+<i class="fa-solid fa-pen"></i> Edit
+</a>
+<a class="delete" href="?delete=<?= $t['id_teknisi'] ?>" onclick="return confirm('Hapus data?')">
+<i class="fa-solid fa-trash"></i> Hapus
+</a>
 </td>
 </tr>
 <?php endwhile; else: ?>
-<tr><td colspan="5" align="center">Belum ada data teknisi</td></tr>
+<tr>
+<td colspan="5" align="center">Belum ada data teknisi</td>
+</tr>
 <?php endif; ?>
 </table>
+
 </div>
-</div>
+
+</main>
 
 </body>
 </html>

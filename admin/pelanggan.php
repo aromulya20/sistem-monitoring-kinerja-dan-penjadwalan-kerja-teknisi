@@ -51,143 +51,130 @@ $pelanggan = $conn->query("SELECT * FROM pelanggan ORDER BY id_pelanggan DESC");
 <meta charset="UTF-8">
 <title>Data Pelanggan | SISMONTEK</title>
 
-<style>
-body{
- margin:0;
- font-family:Poppins,Arial;
- background:#f5f7fb;
- display:flex;
-}
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Font Awesome Icons -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-
-/* ===== MAIN ===== */
-
-
-h1{
- color:#1e40af;
- margin-bottom:20px;
-}
-
-.card{
- background:#fff;
- border-radius:14px;
- padding:24px;
- box-shadow:0 8px 20px rgba(0,0,0,.06);
- margin-bottom:25px;
-}
-
-.card h3{
- margin-top:0;
- color:#1e40af;
-}
-
-/* ===== FORM ===== */
-input,textarea,select{
- width:100%;
- padding:10px;
- margin-top:8px;
- border:1px solid #d1d5db;
- border-radius:8px;
-}
-
-button{
- background:#2563eb;
- color:#fff;
- border:none;
- padding:10px 22px;
- border-radius:8px;
- cursor:pointer;
- margin-top:15px;
-}
-
-button:hover{
- background:#1e40af;
-}
-
-/* ===== TABLE ===== */
-table{
- width:100%;
- border-collapse:collapse;
-}
-
-th{
- background:#2563eb;
- color:#fff;
- padding:10px;
-}
-
-td{
- padding:10px;
- border-bottom:1px solid #e5e7eb;
-}
-
-.action a{
- text-decoration:none;
- margin-right:8px;
- font-weight:500;
-}
-
-.edit{color:#2563eb;}
-.delete{color:#dc2626;}
-</style>
 </head>
 
-<body>
+<body class="bg-slate-100">
 
+<!-- SIDEBAR -->
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<!-- CONTENT -->
-<div class="main">
-  <button class="menu" onclick="sidebar.classList.toggle('show')">☰</button>
-<h1>Manajemen Data Pelanggan</h1>
+<!-- KONTEN -->
+<main class="ml-64 min-h-screen p-8">
 
-<div class="card">
-<h3><?= $editMode ? 'Edit Pelanggan' : 'Tambah Pelanggan'; ?></h3>
-<form method="post">
+<h1 class="text-2xl font-semibold text-slate-800 mb-6">
+    Manajemen Data Pelanggan
+</h1>
+
+<!-- FORM -->
+<div class="bg-white rounded-xl shadow p-6 mb-8">
+<h3 class="text-lg font-semibold mb-4">
+    <?= $editMode ? 'Edit Pelanggan' : 'Tambah Pelanggan'; ?>
+</h3>
+
+<form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
 <?php if($editMode): ?>
 <input type="hidden" name="id_pelanggan" value="<?= $editData['id_pelanggan']; ?>">
 <?php endif; ?>
 
-<input type="text" name="nama_pelanggan" placeholder="Nama" required value="<?= $editMode?$editData['nama_pelanggan']:''; ?>">
-<textarea name="alamat" placeholder="Alamat" required><?= $editMode?$editData['alamat']:''; ?></textarea>
-<input type="text" name="nomer_telepon" placeholder="Telepon" required value="<?= $editMode?$editData['nomer_telepon']:''; ?>">
-<input type="email" name="email" placeholder="Email" required value="<?= $editMode?$editData['email']:''; ?>">
+<div>
+<label class="text-sm font-medium">Nama Pelanggan</label>
+<input type="text" name="nama_pelanggan" required
+       value="<?= $editMode?$editData['nama_pelanggan']:''; ?>"
+       class="w-full border rounded-lg px-4 py-2 mt-1">
+</div>
 
-<select name="paket" required>
+<div>
+<label class="text-sm font-medium">Nomor Telepon</label>
+<input type="text" name="nomer_telepon" required
+       value="<?= $editMode?$editData['nomer_telepon']:''; ?>"
+       class="w-full border rounded-lg px-4 py-2 mt-1">
+</div>
+
+<div>
+<label class="text-sm font-medium">Email</label>
+<input type="email" name="email" required
+       value="<?= $editMode?$editData['email']:''; ?>"
+       class="w-full border rounded-lg px-4 py-2 mt-1">
+</div>
+
+<div>
+<label class="text-sm font-medium">Paket</label>
+<select name="paket" required
+        class="w-full border rounded-lg px-4 py-2 mt-1">
 <option value="">Pilih Paket</option>
 <option <?= $editMode && $editData['paket']=="Basic"?'selected':''; ?>>Basic</option>
 <option <?= $editMode && $editData['paket']=="Standard"?'selected':''; ?>>Standard</option>
 <option <?= $editMode && $editData['paket']=="Premium"?'selected':''; ?>>Premium</option>
 </select>
+</div>
 
-<button name="<?= $editMode?'update':'tambah'; ?>">Simpan</button>
+<div class="md:col-span-2">
+<label class="text-sm font-medium">Alamat</label>
+<textarea name="alamat" rows="3" required
+          class="w-full border rounded-lg px-4 py-2 mt-1"><?= $editMode?$editData['alamat']:''; ?></textarea>
+</div>
+
+<div class="md:col-span-2">
+<button name="<?= $editMode?'update':'tambah'; ?>"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+<i class="fa-solid fa-floppy-disk mr-1"></i> Simpan
+</button>
+</div>
+
 </form>
 </div>
 
-<div class="card">
-<h3>Daftar Pelanggan</h3>
-<table>
+<!-- TABEL -->
+<div class="bg-white rounded-xl shadow p-6">
+<h3 class="text-lg font-semibold mb-4">Daftar Pelanggan</h3>
+
+<table class="w-full border">
+<thead class="bg-blue-600 text-white">
 <tr>
-<th>ID</th><th>Nama</th><th>Alamat</th><th>Telepon</th><th>Email</th><th>Paket</th><th>Aksi</th>
+<th class="p-2">ID</th>
+<th class="p-2">Nama</th>
+<th class="p-2">Alamat</th>
+<th class="p-2">Telepon</th>
+<th class="p-2">Email</th>
+<th class="p-2">Paket</th>
+<th class="p-2">Aksi</th>
 </tr>
+</thead>
+
+<tbody>
 <?php while($p=$pelanggan->fetch_assoc()): ?>
-<tr>
-<td><?= $p['id_pelanggan']; ?></td>
-<td><?= $p['nama_pelanggan']; ?></td>
-<td><?= $p['alamat']; ?></td>
-<td><?= $p['nomer_telepon']; ?></td>
-<td><?= $p['email']; ?></td>
-<td><?= $p['paket']; ?></td>
-<td class="action">
-<a class="edit" href="?edit=<?= $p['id_pelanggan']; ?>">Edit</a>
-<a class="delete" href="?hapus=<?= $p['id_pelanggan']; ?>" onclick="return confirm('Hapus data?')">Hapus</a>
+<tr class="border-b">
+<td class="p-2"><?= $p['id_pelanggan']; ?></td>
+<td class="p-2"><?= $p['nama_pelanggan']; ?></td>
+<td class="p-2"><?= $p['alamat']; ?></td>
+<td class="p-2"><?= $p['nomer_telepon']; ?></td>
+<td class="p-2"><?= $p['email']; ?></td>
+<td class="p-2"><?= $p['paket']; ?></td>
+<td class="p-2 space-x-2">
+<a href="?edit=<?= $p['id_pelanggan']; ?>" class="text-blue-600">
+<i class="fa-solid fa-pen-to-square"></i>
+</a>
+<a href="?hapus=<?= $p['id_pelanggan']; ?>"
+   onclick="return confirm('Hapus data?')"
+   class="text-red-600">
+<i class="fa-solid fa-trash"></i>
+</a>
 </td>
 </tr>
 <?php endwhile; ?>
+</tbody>
 </table>
 </div>
-</div>
+
+</main>
 
 </body>
 </html>

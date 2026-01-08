@@ -1,86 +1,89 @@
 <?php
 session_start();
-if(!isset($_SESSION['username'])){header("Location:../auth/login.php");exit;}
+if(!isset($_SESSION['username'])){
+    header("Location:../auth/login.php");
+    exit;
+}
 include '../database/config.php';
 
-/* KPI */
-$total=$conn->query("SELECT COUNT(*) t FROM laporan")->fetch_assoc()['t'];
-$selesai=$conn->query("SELECT COUNT(*) t FROM jadwal WHERE status='selesai'")->fetch_assoc()['t'];
-$proses=$conn->query("SELECT COUNT(*) t FROM jadwal WHERE status='proses'")->fetch_assoc()['t'];
-$teknisi=$conn->query("SELECT COUNT(*) t FROM teknisi")->fetch_assoc()['t'];
+/* ===== KPI ===== */
+$totalLaporan = $conn->query("SELECT COUNT(*) t FROM laporan")->fetch_assoc()['t'];
+$selesai = $conn->query("SELECT COUNT(*) t FROM jadwal WHERE status='selesai'")->fetch_assoc()['t'];
+$proses  = $conn->query("SELECT COUNT(*) t FROM jadwal WHERE status='proses'")->fetch_assoc()['t'];
+$teknisi = $conn->query("SELECT COUNT(*) t FROM teknisi")->fetch_assoc()['t'];
 
-/* Chart */
-$labels=[];$values=[];
-$q=$conn->query("SELECT status,COUNT(*) j FROM jadwal GROUP BY status");
-while($r=$q->fetch_assoc()){ $labels[]=ucfirst($r['status']); $values[]=$r['j']; }
+/* ===== BAR CHART JADWAL PER STATUS ===== */
+$statusLabel = ['Dijadwalkan','Proses','Selesai'];
+$jadwalValue = [
+    (int)$conn->query("SELECT COUNT(*) FROM jadwal WHERE status='dijadwalkan'")->fetch_assoc()['COUNT(*)'],
+    (int)$conn->query("SELECT COUNT(*) FROM jadwal WHERE status='proses'")->fetch_assoc()['COUNT(*)'],
+    (int)$conn->query("SELECT COUNT(*) FROM jadwal WHERE status='selesai'")->fetch_assoc()['COUNT(*)']
+];
 
-/* Table */
-$data=$conn->query("
-SELECT l.id_laporan,p.nama_pelanggan,u.nama teknisi,j.status,l.tanggal_laporan
-FROM laporan l
-JOIN jadwal j ON l.id_jadwal=j.id_jadwal
-JOIN pelanggan p ON j.id_pelanggan=p.id_pelanggan
-JOIN teknisi t ON j.id_teknisi=t.id_teknisi
-JOIN pengguna u ON t.id_pengguna=u.id_pengguna
-ORDER BY l.tanggal_laporan DESC
+/* ===== LINE CHART LAPORAN PER TANGGAL ===== */
+$dateLabel=[]; $dateValue=[];
+$q2 = $conn->query("
+    SELECT DATE(tanggal_laporan) tgl, COUNT(*) total
+    FROM laporan
+    GROUP BY DATE(tanggal_laporan)
+    ORDER BY tgl ASC
+");
+while($r=$q2->fetch_assoc()){
+    $dateLabel[] = date('d M',strtotime($r['tgl']));
+    $dateValue[] = $r['total'];
+}
+
+/* ===== DATA TABLE ===== */
+$data = $conn->query("
+    SELECT 
+        l.id_laporan,
+        p.nama_pelanggan,
+        u.nama teknisi,
+        j.status,
+        l.tanggal_laporan
+    FROM laporan l
+    JOIN jadwal j ON l.id_jadwal=j.id_jadwal
+    JOIN pelanggan p ON j.id_pelanggan=p.id_pelanggan
+    JOIN teknisi t ON j.id_teknisi=t.id_teknisi
+    JOIN pengguna u ON t.id_pengguna=u.id_pengguna
+    ORDER BY l.tanggal_laporan DESC
 ");
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Sismontek | Enterprise</title>
+<title>Dashboard | SISMONTEK</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
-:root{
- --bg:#f5f7fb;
- --card:#ffffff;
- --text:#0f172a;
- --muted:#64748b;
- --border:#e5e7eb;
-
- --blue:#2563eb;
- --cyan:#06b6d4;
- --green:#22c55e;
- --amber:#f59e0b;
- --purple:#8b5cf6;
-}
-[data-theme="dark"]{
- --bg:#0b1220;
- --card:#0f172a;
- --text:#e5e7eb;
- --muted:#94a3b8;
- --border:#1f2937;
-}
-
-*{box-sizing:border-box}
 body{
  margin:0;
- font-family:Inter,sans-serif;
- background:var(--bg);
- color:var(--text);
- transition:.3s;
+ font-family:Inter,system-ui,sans-serif;
+ background:#f5f7fb;
+ color:#0f172a;
+}
+.main{
+ margin-left:260px;
+ padding:34px 38px;
 }
 
-
-
-
-/* Header */
+/* HEADER */
 .header{
  display:flex;
  justify-content:space-between;
  align-items:center;
  margin-bottom:30px;
 }
-.toggle{
- background:rgba(37,99,235,.15);
- color:var(--blue);
- padding:8px 14px;
- border-radius:999px;
- cursor:pointer;
+.header h1{
+ font-size:26px;
+ font-weight:600;
+ color:#1e40af;
 }
 
 /* KPI */
@@ -88,119 +91,173 @@ body{
  display:grid;
  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
  gap:20px;
- margin-bottom:30px;
+ margin-bottom:32px;
 }
 .kpi-card{
  padding:22px;
  border-radius:18px;
  color:#fff;
- box-shadow:0 10px 30px rgba(0,0,0,.08);
+ box-shadow:0 12px 30px rgba(0,0,0,.08);
 }
-.kpi-card.total{background:linear-gradient(135deg,#2563eb,#60a5fa)}
-.kpi-card.selesai{background:linear-gradient(135deg,#16a34a,#4ade80)}
-.kpi-card.proses{background:linear-gradient(135deg,#0891b2,#22d3ee)}
-.kpi-card.teknisi{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
-
 .kpi-card span{font-size:13px;opacity:.9}
-.kpi-card h2{margin:6px 0 0;font-size:28px}
+.kpi-card h2{margin:6px 0 0;font-size:30px}
+.total{background:linear-gradient(135deg,#2563eb,#60a5fa)}
+.selesai{background:linear-gradient(135deg,#16a34a,#4ade80)}
+.proses{background:linear-gradient(135deg,#0891b2,#22d3ee)}
+.teknisi{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
 
-/* Card */
+/* CARD */
 .card{
- background:var(--card);
+ background:#fff;
  border-radius:18px;
- padding:24px;
+ padding:26px;
  margin-bottom:30px;
- box-shadow:0 12px 30px rgba(0,0,0,.06);
+ box-shadow:0 14px 36px rgba(0,0,0,.06);
+}
+.card h3{
+ margin-top:0;
+ margin-bottom:18px;
+ font-size:18px;
+ font-weight:600;
 }
 
-/* Table */
-table{width:100%;border-collapse:collapse}
+/* TABLE */
+table{
+ width:100%;
+ border-collapse:collapse;
+}
 th{
  text-align:left;
  font-size:13px;
- color:var(--muted);
+ color:#64748b;
  padding-bottom:12px;
 }
 td{
  padding:14px 0;
- border-top:1px solid var(--border);
+ border-top:1px solid #e5e7eb;
 }
 .status{
  padding:6px 14px;
  border-radius:999px;
  font-size:12px;
+ font-weight:500;
  color:#fff;
 }
-.selesai{background:var(--green)}
-.proses{background:var(--cyan)}
-.dijadwalkan{background:var(--amber)}
+.status.selesai{background:#22c55e}
+.status.proses{background:#06b6d4}
+.status.dijadwalkan{background:#f59e0b}
 
+.detail{
+ text-decoration:none;
+ color:#2563eb;
+ font-weight:500;
+}
+.detail:hover{text-decoration:underline}
+
+@media(max-width:1024px){
+ .main{margin-left:0;padding:24px}
+ .chart-flex{flex-direction:column;}
+}
+.chart-flex{display:flex; gap:20px; flex-wrap:wrap;}
+.chart-flex .chart-box{flex:1; min-width:300px;}
 </style>
 </head>
 
-<body data-theme="light">
+<body>
 
 <?php include __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
- <div class="header">
-  <button class="menu" onclick="sidebar.classList.toggle('show')">☰</button>
-  <h1>Enterprise Dashboard</h1>
-  <div class="toggle" onclick="toggleTheme()">🌙 Dark</div>
- </div>
 
- <!-- KPI -->
- <div class="kpi">
-  <div class="kpi-card total"><span>Total Laporan</span><h2><?= $total ?></h2></div>
-  <div class="kpi-card selesai"><span>Selesai</span><h2><?= $selesai ?></h2></div>
-  <div class="kpi-card proses"><span>Proses</span><h2><?= $proses ?></h2></div>
-  <div class="kpi-card teknisi"><span>Teknisi Aktif</span><h2><?= $teknisi ?></h2></div>
- </div>
+<div class="header">
+ <h1>Dashboard Sistem Monitoring Teknisi</h1>
+</div>
 
- <div class="card">
-  <h3>Status Jadwal</h3>
-  <canvas id="chart" height="90"></canvas>
- </div>
+<!-- KPI -->
+<div class="kpi">
+ <div class="kpi-card total"><span>Total Laporan</span><h2><?= $totalLaporan ?></h2></div>
+ <div class="kpi-card selesai"><span>Laporan Selesai</span><h2><?= $selesai ?></h2></div>
+ <div class="kpi-card proses"><span>Dalam Proses</span><h2><?= $proses ?></h2></div>
+ <div class="kpi-card teknisi"><span>Teknisi Aktif</span><h2><?= $teknisi ?></h2></div>
+</div>
 
- <div class="card">
-  <h3>Laporan Terbaru</h3>
-  <table>
-   <tr><th>ID</th><th>Pelanggan</th><th>Teknisi</th><th>Status</th><th>Tanggal</th></tr>
-   <?php while($r=$data->fetch_assoc()): ?>
-   <tr>
-    <td>#<?= $r['id_laporan'] ?></td>
-    <td><?= $r['nama_pelanggan'] ?></td>
-    <td><?= $r['teknisi'] ?></td>
-    <td><span class="status <?= strtolower($r['status']) ?>"><?= ucfirst($r['status']) ?></span></td>
-    <td><?= date('d M Y',strtotime($r['tanggal_laporan'])) ?></td>
-   </tr>
-   <?php endwhile ?>
-  </table>
- </div>
+<!-- CHARTS BERSEBELAHAN -->
+<div class="card chart-flex">
+  <div class="chart-box">
+    <h3>Tren Laporan Berdasarkan Tanggal</h3>
+    <canvas id="lineChart" height="150"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Statistik Jadwal Berdasarkan Status</h3>
+    <canvas id="barChartJadwal" height="150"></canvas>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+ <h3>Laporan Terbaru</h3>
+ <table>
+  <tr>
+   <th>ID</th>
+   <th>Pelanggan</th>
+   <th>Teknisi</th>
+   <th>Status</th>
+   <th>Tanggal</th>
+   <th>Aksi</th>
+  </tr>
+  <?php while($r=$data->fetch_assoc()): ?>
+  <tr>
+   <td>#<?= $r['id_laporan'] ?></td>
+   <td><?= $r['nama_pelanggan'] ?></td>
+   <td><?= $r['teknisi'] ?></td>
+   <td><span class="status <?= $r['status'] ?>"><?= ucfirst($r['status']) ?></span></td>
+   <td><?= date('d M Y',strtotime($r['tanggal_laporan'])) ?></td>
+   <td><a class="detail" href="detail_laporan.php?id=<?= $r['id_laporan'] ?>">Detail</a>
+</td>
+  </tr>
+  <?php endwhile ?>
+ </table>
+</div>
+
 </div>
 
 <script>
-new Chart(chart,{
- type:'bar',
- data:{
-  labels:<?= json_encode($labels) ?>,
-  datasets:[{
-   data:<?= json_encode($values) ?>,
-   backgroundColor:['#f59e0b','#22d3ee','#22c55e'],
-   borderRadius:10
-  }]
- },
- options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+// DATA PHP
+let lineLabels = <?= json_encode($dateLabel) ?>;
+let lineData = <?= json_encode($dateValue) ?>;
+let statusLabels = <?= json_encode($statusLabel) ?>;
+let jadwalData = <?= json_encode($jadwalValue) ?>;
+
+// LINE CHART
+new Chart(document.getElementById('lineChart'),{
+    type:'line',
+    data:{
+        labels: lineLabels,
+        datasets:[{
+            data: lineData,
+            borderColor:'#22c55e',
+            backgroundColor:'rgba(34,197,94,.25)',
+            tension:.4,
+            fill:true
+        }]
+    },
+    options:{scales:{y:{beginAtZero:true}}}
 });
 
-function toggleTheme(){
- let t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';
- document.body.setAttribute('data-theme',t);
- localStorage.setItem('theme',t);
-}
-if(localStorage.getItem('theme')){
- document.body.setAttribute('data-theme',localStorage.getItem('theme'));
-}
+// BAR CHART JADWAL
+new Chart(document.getElementById('barChartJadwal'),{
+    type:'bar',
+    data:{
+        labels: statusLabels,
+        datasets:[{
+            label:'Jumlah Jadwal',
+            data: jadwalData,
+            backgroundColor:['#f59e0b','#06b6d4','#22c55e'],
+            borderRadius:10
+        }]
+    },
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+});
 </script>
 
 </body>

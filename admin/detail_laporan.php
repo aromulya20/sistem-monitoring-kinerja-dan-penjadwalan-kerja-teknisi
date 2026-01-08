@@ -2,179 +2,144 @@
 session_start();
 include '../database/config.php';
 
+// Redirect jika belum login
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
     exit;
 }
 
+// Redirect jika id laporan tidak ada
 if (!isset($_GET['id'])) {
     header("Location: laporan.php");
     exit;
 }
 
-$id_laporan = $_GET['id'];
+$id_laporan = (int) $_GET['id'];
 
-$sql = "
+// Prepared statement
+$stmt = $conn->prepare("
     SELECT 
-        l.*, 
-        p.nama_pelanggan, p.alamat, p.nomer_telepon, p.email,
-        u.nama AS nama_teknisi, 
-        j.deskripsi_pekerjaan, j.status
+        l.id_laporan,
+        l.id_jadwal,
+        l.tanggal_laporan,
+        l.kendala,
+        l.foto_bukti,
+        j.status,
+        j.deskripsi_pekerjaan,
+        p.nama_pelanggan,
+        p.alamat,
+        p.nomer_telepon,
+        p.email,
+        u.nama AS nama_teknisi
     FROM laporan l
     JOIN jadwal j ON l.id_jadwal = j.id_jadwal
     JOIN pelanggan p ON j.id_pelanggan = p.id_pelanggan
     JOIN teknisi t ON j.id_teknisi = t.id_teknisi
     JOIN pengguna u ON t.id_pengguna = u.id_pengguna
-    WHERE l.id_laporan = '$id_laporan'
-";
+    WHERE l.id_laporan = ?
+");
+$stmt->bind_param("i", $id_laporan);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = $conn->query($sql);
-if (!$result || $result->num_rows == 0) {
-    echo "Data tidak ditemukan.";
+$data = $result->fetch_assoc();
+
+// PENGAMAN WAJIB
+if (!$data) {
+    echo "<div style='text-align:center;margin-top:50px'>
+            <h2>Data laporan tidak ditemukan</h2>
+            <a href='laporan.php'>Kembali</a>
+          </div>";
     exit;
 }
-$data = $result->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Detail Laporan | Sismontek</title>
-
-<style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background: #eef2f7;
-        padding: 40px;
-    }
-
-    .container {
-        background: white;
-        padding: 35px;
-        border-radius: 14px;
-        max-width: 900px;
-        margin: auto;
-        box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
-    }
-
-    h2 {
-        text-align: center;
-        margin-bottom: 35px;
-        color: #1f3c88;
-        letter-spacing: 1px;
-        font-size: 26px;
-        font-weight: 600;
-    }
-
-    .section-title {
-        font-size: 18px;
-        margin-bottom: 10px;
-        font-weight: 600;
-        color: #1f3c88;
-        border-left: 4px solid #3f72af;
-        padding-left: 10px;
-    }
-
-    .info-box {
-        background: #f8faff;
-        border: 1px solid #d7e3fc;
-        padding: 18px;
-        border-radius: 10px;
-        margin-bottom: 25px;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-    }
-
-    .info-item strong {
-        color: #112d4e;
-    }
-
-    .kendala-box {
-        background: #fff6e6;
-        padding: 15px;
-        border-left: 4px solid #ffa502;
-        border-radius: 10px;
-        margin-top: 10px;
-    }
-
-    img {
-        width: 100%;
-        max-height: 380px;
-        border-radius: 12px;
-        object-fit: cover;
-        margin-top: 10px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .back-btn {
-        display: inline-block;
-        padding: 10px 18px;
-        margin-top: 25px;
-        background: #1f3c88;
-        color: white;
-        text-decoration: none;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: 0.3s;
-    }
-
-    .back-btn:hover {
-        background: #163276;
-    }
-</style>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detail Laporan | SISMONTEK</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-<div class="container">
+<body class="min-h-screen bg-gradient-to-br from-blue-100 via-sky-100 to-indigo-100 font-sans">
 
-    <h2>📋 Detail Laporan Teknisi</h2>
+<div class="max-w-5xl mx-auto p-6">
 
-    <!-- ======================== DATA PELANGGAN =========================== -->
-    <div class="section-title">Informasi Pelanggan</div>
-    <div class="info-box info-grid">
-        <div class="info-item"><strong>Nama Pelanggan:</strong><br><?= htmlspecialchars($data['nama_pelanggan']); ?></div>
-        <div class="info-item"><strong>Email:</strong><br><?= htmlspecialchars($data['email']); ?></div>
-        <div class="info-item"><strong>No. Telepon:</strong><br><?= htmlspecialchars($data['nomer_telepon']); ?></div>
-        <div class="info-item"><strong>Alamat:</strong><br><?= htmlspecialchars($data['alamat']); ?></div>
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold text-blue-900 mb-2">📋 Detail Laporan Teknisi</h1>
+        <p class="text-gray-600">Informasi lengkap pekerjaan dan bukti teknisi</p>
     </div>
 
-    <!-- ======================== DATA TEKNISI =========================== -->
-    <div class="section-title">Informasi Teknisi</div>
-    <div class="info-box info-grid">
-        <div class="info-item"><strong>Nama Teknisi:</strong><br><?= htmlspecialchars($data['nama_teknisi']); ?></div>
-        <div class="info-item"><strong>Status Pekerjaan:</strong><br><?= ucfirst($data['status']); ?></div>
-    </div>
+    <!-- Info -->
+    <div class="grid gap-6 md:grid-cols-2">
 
-    <!-- ======================== DATA PEKERJAAN =========================== -->
-    <div class="section-title">Detail Pekerjaan</div>
-    <div class="info-box">
-        <strong>Deskripsi Pekerjaan:</strong><br>
-        <?= nl2br(htmlspecialchars($data['deskripsi_pekerjaan'])); ?>
+        <!-- Pelanggan -->
+        <div class="bg-white shadow-xl rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-blue-800 mb-4">👤 Informasi Pelanggan</h2>
+            <div class="space-y-2 text-gray-700">
+                <p><b>Nama:</b> <?= htmlspecialchars($data['nama_pelanggan'] ?? '-'); ?></p>
+                <p><b>Email:</b> <?= htmlspecialchars($data['email'] ?? '-'); ?></p>
+                <p><b>No. Telepon:</b> <?= htmlspecialchars($data['nomer_telepon'] ?? '-'); ?></p>
+                <p><b>Alamat:</b> <?= htmlspecialchars($data['alamat'] ?? '-'); ?></p>
+            </div>
+        </div>
 
-        <br><br>
-        <strong>Tanggal Laporan:</strong><br><?= htmlspecialchars($data['tanggal_laporan']); ?>
+        <!-- Teknisi -->
+        <div class="bg-white shadow-xl rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-blue-800 mb-4">🧑‍🔧 Informasi Teknisi</h2>
+            <p><b>Nama Teknisi:</b> <?= htmlspecialchars($data['nama_teknisi'] ?? '-'); ?></p>
 
-        <br><br>
-        <strong>Kendala:</strong>
-        <div class="kendala-box">
-            <?= nl2br(htmlspecialchars($data['kendala'])); ?>
+            <p class="mt-3">
+                <b>Status:</b>
+                <span class="px-3 py-1 rounded-full text-sm font-semibold
+                    <?= ($data['status'] ?? '') == 'selesai'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'; ?>">
+                    <?= ucfirst($data['status'] ?? 'tidak diketahui'); ?>
+                </span>
+            </p>
         </div>
     </div>
 
-    <!-- ======================== FOTO BUKTI =========================== -->
-    <?php if (!empty($data['foto_bukti'])): ?>
-        <div class="section-title">Foto Bukti</div>
-        <img src="../uploads/<?= htmlspecialchars($data['foto_bukti']); ?>" alt="Foto Bukti">
+    <!-- Detail -->
+    <div class="bg-white shadow-xl rounded-2xl p-6 mt-6">
+        <h2 class="text-lg font-bold text-blue-800 mb-4">📝 Detail Pekerjaan</h2>
+
+        <p class="mb-3">
+            <b>Deskripsi:</b><br>
+            <?= nl2br(htmlspecialchars($data['deskripsi_pekerjaan'] ?? '-')); ?>
+        </p>
+
+        <p><b>Tanggal Laporan:</b> <?= htmlspecialchars($data['tanggal_laporan'] ?? '-'); ?></p>
+
+        <?php if (!empty($data['kendala'])): ?>
+        <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+            <b>Kendala:</b><br>
+            <?= nl2br(htmlspecialchars($data['kendala'])); ?>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Foto -->
+    <?php if (!empty($data['foto_bukti']) && file_exists('../uploads/'.$data['foto_bukti'])): ?>
+    <div class="bg-white shadow-xl rounded-2xl p-6 mt-6">
+        <h2 class="text-lg font-bold text-blue-800 mb-4">📷 Foto Bukti</h2>
+        <img src="../uploads/<?= htmlspecialchars($data['foto_bukti']); ?>"
+             class="w-full max-h-[400px] object-cover rounded-xl hover:scale-105 transition">
+    </div>
     <?php endif; ?>
 
-    <a href="laporan.php" class="back-btn">⬅ Kembali</a>
-</div>
+    <!-- Back -->
+    <div class="text-center mt-8">
+        <a href="laporan.php"
+           class="inline-block bg-blue-800 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-900 transition">
+           ⬅ Kembali ke Laporan
+        </a>
+    </div>
 
+</div>
 </body>
 </html>
