@@ -13,20 +13,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $role = trim($_POST['role']);
 
     if ($nama && $username && $password && $role) {
-        $stmt = $conn->prepare(
-            "INSERT INTO pengguna (nama, username, password, role) VALUES (?,?,?,?)"
-        );
-        $stmt->bind_param("ssss",$nama,$username,$password,$role);
-        if ($stmt->execute()) {
-            header("Location: tambah_pengguna.php?success=1");
-            exit;
+
+        // 🔍 CEK USERNAME SUDAH ADA ATAU BELUM
+        $cek = $conn->prepare("SELECT id_pengguna FROM pengguna WHERE username = ?");
+        $cek->bind_param("s", $username);
+        $cek->execute();
+        $cek->store_result();
+
+        if ($cek->num_rows > 0) {
+            $error = "Username sudah digunakan, silakan pilih username lain";
         } else {
-            $error = "Gagal menyimpan data";
+
+            //HASH PASSWORD 
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            $stmt = $conn->prepare(
+                "INSERT INTO pengguna (nama, username, password, role) VALUES (?,?,?,?)"
+            );
+            $stmt->bind_param("ssss", $nama, $username, $hashedPassword, $role);
+
+            if ($stmt->execute()) {
+                header("Location: tambah_pengguna.php?success=1");
+                exit;
+            } else {
+                $error = "Gagal menyimpan data pengguna";
+            }
         }
     } else {
         $error = "Semua field wajib diisi";
     }
 }
+
 ?>
 
 <!DOCTYPE html>

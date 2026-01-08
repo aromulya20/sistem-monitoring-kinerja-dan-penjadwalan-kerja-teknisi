@@ -176,7 +176,7 @@ body{
 <!-- APP BAR -->
 <div class="appbar">
     <span>📋 Tugas Teknisi</span>
-    <a href="/auth/logout.php" style="color:#fff;text-decoration:none">Logout</a>
+    <a href="../auth/logout.php" style="color:#fff;text-decoration:none">Logout</a>
 </div>
 
 <div class="content">
