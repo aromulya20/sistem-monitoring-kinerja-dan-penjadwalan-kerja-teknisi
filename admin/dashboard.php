@@ -4,15 +4,9 @@ if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
     exit;
 }
-
 include '../database/config.php';
 
-/*
- Dashboard: ambil data untuk dua chart (status jadwal & jumlah laporan per hari)
- serta ringkasan tugas terbaru.
-*/
-
-// Data tugas terbaru (5)
+/* DATA */
 $jadwalQuery = $conn->query("
     SELECT deskripsi_pekerjaan, status, tanggal_jadwal
     FROM jadwal
@@ -20,307 +14,258 @@ $jadwalQuery = $conn->query("
     LIMIT 5
 ");
 
-// Data untuk chart status jadwal
-$statusQuery = $conn->query("SELECT status, COUNT(*) AS jumlah FROM jadwal GROUP BY status");
-$status_labels = array();
-$status_values = array();
-if ($statusQuery) {
-    while ($row = $statusQuery->fetch_assoc()) {
-        $status_labels[] = ucfirst($row['status']);
-        $status_values[] = (int)$row['jumlah'];
-    }
+$status_labels = [];
+$status_values = [];
+$q = $conn->query("SELECT status, COUNT(*) total FROM jadwal GROUP BY status");
+while($r = $q->fetch_assoc()){
+  $status_labels[] = ucfirst($r['status']);
+  $status_values[] = (int)$r['total'];
 }
 
-// Data untuk chart jumlah laporan per hari
-$laporanQuery = $conn->query("
-    SELECT tanggal_laporan, COUNT(*) AS total
-    FROM laporan
-    GROUP BY tanggal_laporan
-    ORDER BY tanggal_laporan ASC
+$laporan_tanggal = [];
+$laporan_total = [];
+$q2 = $conn->query("
+  SELECT tanggal_laporan, COUNT(*) total
+  FROM laporan
+  GROUP BY tanggal_laporan
+  ORDER BY tanggal_laporan
 ");
-$laporan_tanggal = array();
-$laporan_total = array();
-if ($laporanQuery) {
-    while ($row = $laporanQuery->fetch_assoc()) {
-        $laporan_tanggal[] = $row['tanggal_laporan'];
-        $laporan_total[] = (int)$row['total'];
-    }
+while($r = $q2->fetch_assoc()){
+  $laporan_tanggal[] = $r['tanggal_laporan'];
+  $laporan_total[] = (int)$r['total'];
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard Admin | Sismontek</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Admin</title>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --primary: #3f72af;
-  --light-bg: #f4f6fb;
-  --card: #ffffff;
+  --primary:#3f72af;
+  --bg:#f4f6fb;
+  --card:#fff;
 }
 *{box-sizing:border-box}
 body{
   margin:0;
-  font-family: "Poppins", sans-serif;
-  background:var(--light-bg);
-  color:#243240;
-  height:100vh;
-  display:flex;
+  font-family:Poppins,sans-serif;
+  background:var(--bg);
 }
 
-/* Sidebar */
+/* BACKDROP */
+.backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  display:none;
+  z-index:90;
+}
+.backdrop.show{display:block}
+
+/* SIDEBAR */
 .sidebar{
+  position:fixed;
+  top:0;
+  left:-260px;
   width:240px;
+  height:100%;
   background:var(--primary);
   color:#fff;
-  height:100vh;
-  position:fixed;
-  left:0;
-  top:0;
   padding-top:20px;
-  display:flex;
-  flex-direction:column;
+  transition:.3s;
+  z-index:100;
 }
-.sidebar h2{
-  text-align:center;
-  margin:0 0 20px 0;
-  font-weight:600;
-}
+.sidebar.show{left:0}
+.sidebar h2{text-align:center;margin-bottom:20px}
 .sidebar a{
   color:#fff;
   text-decoration:none;
-  padding:12px 20px;
+  padding:14px 20px;
   display:block;
-  transition:background .15s;
 }
-.sidebar a:hover, .sidebar a.active{ background:#2e5c8a; }
+.sidebar a:hover,.active{background:#2e5c8a}
 
-/* Main area */
-.main {
-  margin-left:240px;
-  width:calc(100% - 240px);
-  display:flex;
-  flex-direction:column;
-  min-height:100vh;
-}
-
-/* Header */
+/* HEADER */
 header{
   background:#fff;
-  padding:16px 28px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  padding:14px 16px;
   display:flex;
   justify-content:space-between;
   align-items:center;
   position:sticky;
   top:0;
-  z-index:5;
+  z-index:10;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
-header h2{ color:var(--primary); margin:0; font-size:18px; }
-.logout{ background:#e74c3c; color:#fff; padding:8px 12px; border-radius:6px; text-decoration:none; }
+.menu-btn{
+  font-size:22px;
+  border:none;
+  background:none;
+}
+.logout{
+  background:#e74c3c;
+  color:#fff;
+  padding:8px 12px;
+  border-radius:8px;
+  text-decoration:none;
+}
 
-/* Content */
+/* CONTENT */
 .content{
-  padding:26px;
-  overflow:auto;
-  flex:1;
+  padding:16px;
 }
 
-/* Chart row */
-.chart-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-bottom:20px;
-}
-.chart-card{
-  background:var(--card);
-  padding:18px;
-  border-radius:12px;
-  box-shadow:0 6px 18px rgba(63,114,175,0.08);
-}
-.chart-card h3{ margin:0 0 12px 0; color:var(--primary); }
-
-/* Welcome & table */
+/* CARD */
 .card{
   background:var(--card);
-  border-radius:12px;
-  padding:18px;
-  box-shadow:0 6px 18px rgba(63,114,175,0.06);
-  margin-bottom:18px;
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
 }
-.welcome{ display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; }
-.welcome h3{ margin:0; color:var(--primary); }
 
-/* Table */
+/* CHART */
+.chart{
+  height:240px;
+}
+
+/* TABLE */
 .table{
   width:100%;
   border-collapse:collapse;
-  margin-top:12px;
 }
 .table th{
   background:var(--primary);
   color:#fff;
   padding:10px;
-  text-align:left;
 }
 .table td{
   padding:10px;
   border-bottom:1px solid #eee;
 }
 
-/* Responsive */
-@media(max-width:900px){
-  .chart-row{ grid-template-columns:1fr; }
-  .sidebar{ position:relative; width:100%; height:auto; flex-direction:row; padding:10px; }
-  .main{ margin-left:0; width:100%; }
-  header{ padding:12px; }
+/* MOBILE OPTIMIZATION */
+@media(max-width:600px){
+
+  h3,h4{font-size:16px}
+
+  .chart{height:200px}
+
+  /* sembunyikan kolom tanggal */
+  .table th:nth-child(3),
+  .table td:nth-child(3){
+    display:none;
+  }
 }
 </style>
 </head>
+
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar">
+<div class="backdrop" id="backdrop"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
   <h2>🔧 Sismontek</h2>
-  <a href="dashboard.php" class="active">🏠 Home</a>
+  <a class="active" href="#">🏠 Dashboard</a>
   <a href="jadwal.php">🗓 Jadwal</a>
-  <a href="tambah_pengguna.php">➕ Tambah Pengguna</a>
   <a href="pelanggan.php">👥 Pelanggan</a>
   <a href="teknisi.php">🧑‍🔧 Teknisi</a>
-  <a href="laporan.php">📊 Laporan Kinerja</a>
+  <a href="laporan.php">📊 Laporan</a>
   <a href="../auth/logout.php">🚪 Logout</a>
 </div>
 
-<!-- Main -->
-<div class="main">
-  <header>
-    <h2>Dashboard Admin</h2>
-    <a href="../auth/logout.php" class="logout">Logout</a>
-  </header>
+<!-- HEADER -->
+<header>
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <strong>Dashboard</strong>
+  <a href="../auth/logout.php" class="logout">Logout</a>
+</header>
 
-  <div class="content">
+<!-- CONTENT -->
+<div class="content">
 
-     <!-- Welcome -->
-    <div class="card">
-      <div class="welcome">
-        <div>
-          <h3>Selamat Datang, <?php echo htmlspecialchars($_SESSION['nama']); ?> 👋</h3>
-          <div style="color:#6b7280;font-size:14px;">Anda login sebagai <strong><?php echo ucfirst(htmlspecialchars($_SESSION['role'])); ?></strong></div>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center;"></div>
-      </div>
-    </div>
-
-    <!-- Charts on top (2 columns) -->
-    <div class="chart-row">
-      <div class="chart-card">
-        <h3>📊 Status Jadwal Teknisi</h3>
-        <canvas id="statusChart" aria-label="Status Jadwal Chart" role="img"></canvas>
-      </div>
-
-      <div class="chart-card">
-        <h3>📈 Jumlah Laporan per Hari</h3>
-        <canvas id="laporanChart" aria-label="Jumlah Laporan Chart" role="img"></canvas>
-      </div>
-    </div>
-
-    <!-- Recent tasks table -->
-    <div class="card">
-      <h3 style="color:var(--primary); margin:0 0 10px 0;">Tugas Teknisi Terbaru</h3>
-      <table class="table" role="table" aria-label="Tugas Teknisi Terbaru">
-        <thead>
-          <tr>
-            <th>Deskripsi</th>
-            <th>Status</th>
-            <th>Tanggal</th>
-          </tr>
-        </thead>
-        <tbody>
-        <?php
-        if ($jadwalQuery && $jadwalQuery->num_rows > 0) {
-            while ($r = $jadwalQuery->fetch_assoc()) {
-                echo '<tr>';
-                echo '<td>' . htmlspecialchars($r['deskripsi_pekerjaan']) . '</td>';
-                echo '<td>' . ucfirst(htmlspecialchars($r['status'])) . '</td>';
-                echo '<td>' . htmlspecialchars($r['tanggal_jadwal']) . '</td>';
-                echo '</tr>';
-            }
-        } else {
-            echo '<tr><td colspan="3">Belum ada tugas terbaru.</td></tr>';
-        }
-        ?>
-        </tbody>
-      </table>
-    </div>
-
-  </div>
+<div class="card">
+  <h3>Halo, <?= htmlspecialchars($_SESSION['nama']) ?> 👋</h3>
+  <small>Role: <?= ucfirst($_SESSION['role']) ?></small>
 </div>
 
-<!-- Charts script -->
+<div class="card">
+  <h4>Status Jadwal</h4>
+  <canvas id="statusChart" class="chart"></canvas>
+</div>
+
+<div class="card">
+  <h4>Laporan Harian</h4>
+  <canvas id="laporanChart" class="chart"></canvas>
+</div>
+
+<div class="card">
+<h4>Tugas Terbaru</h4>
+<table class="table">
+<thead>
+<tr>
+  <th>Deskripsi</th>
+  <th>Status</th>
+  <th>Tanggal</th>
+</tr>
+</thead>
+<tbody>
+<?php
+if ($jadwalQuery->num_rows){
+  while($r=$jadwalQuery->fetch_assoc()){
+    echo "<tr>
+      <td>".htmlspecialchars($r['deskripsi_pekerjaan'])."</td>
+      <td>".ucfirst($r['status'])."</td>
+      <td>".$r['tanggal_jadwal']."</td>
+    </tr>";
+  }
+}else{
+  echo "<tr><td colspan='3'>Belum ada data</td></tr>";
+}
+?>
+</tbody>
+</table>
+</div>
+
+</div>
+
 <script>
-const statusLabels = <?php echo json_encode($status_labels, JSON_UNESCAPED_UNICODE); ?>;
-const statusData = <?php echo json_encode($status_values, JSON_UNESCAPED_UNICODE); ?>;
+const sidebar = document.getElementById("sidebar");
+const backdrop = document.getElementById("backdrop");
 
-const laporanLabels = <?php echo json_encode($laporan_tanggal, JSON_UNESCAPED_UNICODE); ?>;
-const laporanData = <?php echo json_encode($laporan_total, JSON_UNESCAPED_UNICODE); ?>;
+menuBtn.onclick = ()=>{
+  sidebar.classList.add("show");
+  backdrop.classList.add("show");
+}
+backdrop.onclick = ()=>{
+  sidebar.classList.remove("show");
+  backdrop.classList.remove("show");
+}
 
-// Status Bar Chart
-const ctxStatus = document.getElementById('statusChart').getContext('2d');
-new Chart(ctxStatus, {
-    type: 'bar',
-    data: {
-        labels: statusLabels,
-        datasets: [{
-            label: 'Jumlah Jadwal',
-            data: statusData,
-            backgroundColor: ['#f9a825', '#29b6f6', '#66bb6a'],
-            borderRadius: 6
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Jumlah' } }
-        }
-    }
+/* Charts */
+new Chart(statusChart,{
+  type:'bar',
+  data:{
+    labels:<?= json_encode($status_labels) ?>,
+    datasets:[{data:<?= json_encode($status_values) ?>,backgroundColor:'#3f72af'}]
+  },
+  options:{responsive:true,plugins:{legend:{display:false}}}
 });
 
-// Laporan Line Chart
-const ctxLaporan = document.getElementById('laporanChart').getContext('2d');
-new Chart(ctxLaporan, {
-    type: 'line',
-    data: {
-        labels: laporanLabels,
-        datasets: [{
-            label: 'Jumlah Laporan',
-            data: laporanData,
-            borderColor: '#3f72af',
-            backgroundColor: 'rgba(63,114,175,0.15)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 4
-        }]
-    },
-    options: {
-        responsive: true,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom' } },
-        scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Jumlah Laporan' } },
-            x: { title: { display: true, text: 'Tanggal' } }
-        }
-    }
+new Chart(laporanChart,{
+  type:'line',
+  data:{
+    labels:<?= json_encode($laporan_tanggal) ?>,
+    datasets:[{data:<?= json_encode($laporan_total) ?>,borderColor:'#3f72af',fill:true}]
+  },
+  options:{responsive:true}
 });
 </script>
 
