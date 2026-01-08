@@ -7,304 +7,183 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] != 'manajer') {
     exit;
 }
 
-// === DATA CHART STATUS ===
-$data_status = $conn->query("SELECT status, COUNT(*) AS jumlah FROM jadwal GROUP BY status");
-$status_labels = [];
-$status_values = [];
-while ($row = $data_status->fetch_assoc()) {
-    $status_labels[] = ucfirst($row['status']);
-    $status_values[] = $row['jumlah'];
+$status = $conn->query("SELECT status, COUNT(*) j FROM jadwal GROUP BY status");
+$status_labels=[]; $status_values=[];
+while($r=$status->fetch_assoc()){
+  $status_labels[]=ucfirst($r['status']);
+  $status_values[]=$r['j'];
 }
 
-// === DATA CHART LAPORAN PER HARI ===
-$data_laporan = $conn->query("
-    SELECT tanggal_jadwal, COUNT(*) AS total 
-    FROM jadwal GROUP BY tanggal_jadwal ORDER BY tanggal_jadwal ASC
+$lap = $conn->query("
+SELECT tanggal_jadwal, COUNT(*) t 
+FROM jadwal GROUP BY tanggal_jadwal ORDER BY tanggal_jadwal
 ");
-$laporan_tanggal = [];
-$laporan_total = [];
-while ($row = $data_laporan->fetch_assoc()) {
-    $laporan_tanggal[] = $row['tanggal_jadwal'];
-    $laporan_total[] = $row['total'];
+$lap_t=[]; $lap_v=[];
+while($r=$lap->fetch_assoc()){
+  $lap_t[]=$r['tanggal_jadwal'];
+  $lap_v[]=$r['t'];
 }
 
-// === LAPORAN TERBARU ===
-$laporan_terbaru = $conn->query("
-    SELECT l.*, p.nama_pelanggan, j.deskripsi_pekerjaan 
-    FROM laporan l
-    JOIN jadwal j ON l.id_jadwal = j.id_jadwal
-    JOIN pelanggan p ON j.id_pelanggan = p.id_pelanggan
-    ORDER BY l.tanggal_laporan DESC LIMIT 5
+$laporan = $conn->query("
+SELECT l.*, p.nama_pelanggan, j.deskripsi_pekerjaan
+FROM laporan l
+JOIN jadwal j ON l.id_jadwal=j.id_jadwal
+JOIN pelanggan p ON j.id_pelanggan=p.id_pelanggan
+ORDER BY l.tanggal_laporan DESC LIMIT 5
 ");
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Manajer | Sismontek</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Manajer</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
-:root {
-    --primary: #3f72af;
-    --secondary: #dbe2ef;
-    --accent: #112d4e;
-    --bg: #f9fbfd;
-    --white: #ffffff;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
-body { background-color: var(--bg); color: #333; }
-
-/* Navbar */
-.navbar {
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    color: white;
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
-.navbar h1 { font-size: 20px; font-weight: 600; }
-.navbar a {
-    color: white;
-    text-decoration: none;
-    background-color: rgba(255,255,255,0.2);
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: 0.3s;
-}
-.navbar a:hover { background-color: rgba(255,255,255,0.4); }
-
-/* Container */
-.container {
-    padding: 25px 40px;
-    animation: fadeIn 0.6s ease-in-out;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Poppins,sans-serif;
+  background:#f4f6fb;
 }
 
-/* Header Text */
-.header-text {
-    margin-bottom: 25px;
+/* HEADER */
+.header{
+  background:#3f72af;
+  color:#fff;
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
-.header-text h2 {
-    color: var(--accent);
-    font-size: 24px;
-    font-weight: 600;
-}
-.header-text p {
-    color: #666;
-    font-size: 15px;
-}
-
-/* Cards Layout */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 25px;
+.header h1{font-size:18px}
+.header a{
+  color:#fff;
+  text-decoration:none;
+  background:rgba(255,255,255,.2);
+  padding:8px 12px;
+  border-radius:8px;
 }
 
-/* Card */
-.card {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+/* CONTENT */
+.container{padding:16px}
+
+/* CARD */
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 6px 15px rgba(0,0,0,.08);
 }
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(63,114,175,0.2);
-}
-.card h3 {
-    color: var(--primary);
-    font-weight: 600;
-    margin-bottom: 15px;
+.card h3{font-size:16px;margin-bottom:8px;color:#3f72af}
+
+/* CHART */
+.chart{
+  height:200px;
 }
 
-/* Table */
-.table-box {
-    background: var(--white);
-    border-radius: 16px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-    margin-top: 30px;
-    padding: 20px;
+/* LAPORAN LIST (MOBILE FRIENDLY) */
+.list-item{
+  border-left:4px solid #3f72af;
+  padding:12px;
+  margin-bottom:12px;
+  background:#f9fbff;
+  border-radius:10px;
 }
-.table-box h3 {
-    margin-bottom: 15px;
-    color: var(--primary);
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    overflow: hidden;
-    border-radius: 10px;
-}
-th, td {
-    padding: 12px 10px;
-    text-align: center;
-}
-th {
-    background-color: var(--primary);
-    color: white;
-}
-tr:nth-child(even) { background-color: #f2f5fa; }
+.list-item strong{display:block}
 
-/* Buttons */
-.buttons {
-    margin-top: 25px;
+/* BUTTON */
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#3f72af;
+  color:#fff;
+  font-size:15px;
+  margin-bottom:10px;
 }
-button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--primary);
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: 0.3s;
-}
-button:hover {
-    background-color: var(--accent);
-}
-@media(max-width:768px) {
-    .container { padding: 20px; }
+
+/* DESKTOP */
+@media(min-width:768px){
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  .chart{height:260px}
+  .btn{width:auto}
 }
 </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<div class="navbar">
-    <h1>📊 Dashboard Manajer</h1>
-    <a href="../auth/logout.php">Logout</a>
+<div class="header">
+  <h1>📊 Manajer</h1>
+  <a href="../auth/logout.php">Logout</a>
 </div>
 
-<!-- CONTENT -->
 <div class="container">
-    <div class="header-text">
-        <h2>Selamat Datang, <?= htmlspecialchars($_SESSION['nama']); ?> 👋</h2>
-        <p>Berikut rangkuman performa tim teknisi minggu ini.</p>
+
+<div class="card">
+  <h3>Halo, <?= htmlspecialchars($_SESSION['nama']) ?> 👋</h3>
+  <small>Ringkasan performa teknisi</small>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>Status Jadwal</h3>
+    <canvas id="c1" class="chart"></canvas>
+  </div>
+  <div class="card">
+    <h3>Kerusakan Harian</h3>
+    <canvas id="c2" class="chart"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Laporan Terbaru</h3>
+
+  <?php if($laporan->num_rows): while($r=$laporan->fetch_assoc()): ?>
+    <div class="list-item">
+      <strong><?= $r['nama_pelanggan'] ?></strong>
+      <?= $r['deskripsi_pekerjaan'] ?><br>
+      <small><?= $r['kendala'] ?> • <?= $r['tanggal_laporan'] ?></small>
     </div>
+  <?php endwhile; else: ?>
+    <p>Tidak ada laporan</p>
+  <?php endif; ?>
+</div>
 
-    <!-- CHARTS -->
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>📊 Status Jadwal Teknisi</h3>
-            <canvas id="chartStatus"></canvas>
-        </div>
+<button class="btn" onclick="cetak('minggu')">📅 Cetak Mingguan</button>
+<button class="btn" onclick="cetak('bulan')">🗓 Cetak Bulanan</button>
 
-        <div class="card">
-            <h3>📈 Jumlah Kerusakan per Tanggal</h3>
-            <canvas id="chartLaporan"></canvas>
-        </div>
-    </div>
-
-    <!-- TABEL LAPORAN TERBARU -->
-    <div class="table-box">
-        <h3>🧾 Laporan Terbaru</h3>
-        <table>
-            <tr>
-                <th>No</th>
-                <th>Pelanggan</th>
-                <th>Deskripsi</th>
-                <th>Kendala</th>
-                <th>Tanggal</th>
-            </tr>
-            <?php
-            if ($laporan_terbaru->num_rows > 0) {
-                $no = 1;
-                while ($row = $laporan_terbaru->fetch_assoc()) {
-                    echo "<tr>
-                        <td>{$no}</td>
-                        <td>{$row['nama_pelanggan']}</td>
-                        <td>{$row['deskripsi_pekerjaan']}</td>
-                        <td>{$row['kendala']}</td>
-                        <td>{$row['tanggal_laporan']}</td>
-                    </tr>";
-                    $no++;
-                }
-            } else {
-                echo "<tr><td colspan='5'>Belum ada laporan terbaru.</td></tr>";
-            }
-            ?>
-        </table>
-    </div>
-
-    <!-- Tombol Cetak -->
-    <div style="margin-top:20px;">
-        <button onclick="cetakLaporan('minggu')">🗓 Cetak Laporan Mingguan</button>
-        <button onclick="cetakLaporan('bulan')">📅 Cetak Laporan Bulanan</button>
-    </div>
-
-    <!-- Iframe tersembunyi -->
-    <iframe id="printFrame" style="display:none;"></iframe>
+<iframe id="f" style="display:none"></iframe>
 
 </div>
 
-<!-- CHART JS -->
 <script>
-new Chart(document.getElementById('chartStatus'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode($status_labels); ?>,
-        datasets: [{
-            label: 'Jumlah Jadwal',
-            data: <?= json_encode($status_values); ?>,
-            backgroundColor: ['#3f72af', '#f9a825', '#66bb6a'],
-            borderRadius: 6
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Jumlah' } }
-        },
-        plugins: { legend: { display: false } }
-    }
+new Chart(c1,{
+  type:'bar',
+  data:{labels:<?=json_encode($status_labels)?>,
+  datasets:[{data:<?=json_encode($status_values)?>,backgroundColor:'#3f72af'}]},
+  options:{responsive:true,plugins:{legend:{display:false}}}
 });
 
-new Chart(document.getElementById('chartLaporan'), {
-    type: 'line',
-    data: {
-        labels: <?= json_encode($laporan_tanggal); ?>,
-        datasets: [{
-            label: 'Jumlah Kerusakan',
-            data: <?= json_encode($laporan_total); ?>,
-            borderColor: '#3f72af',
-            backgroundColor: 'rgba(63,114,175,0.2)',
-            fill: true,
-            tension: 0.3,
-            pointStyle: 'circle',
-            pointRadius: 5,
-            pointHoverRadius: 7
-        }]
-    },
-    options: {
-        responsive: true,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom' } },
-        scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Jumlah Kerusakan' } },
-            x: { title: { display: true, text: 'Tanggal' } }
-        }
-    }
+new Chart(c2,{
+  type:'line',
+  data:{labels:<?=json_encode($lap_t)?>,
+  datasets:[{data:<?=json_encode($lap_v)?>,borderColor:'#3f72af',fill:true}]},
+  options:{responsive:true}
 });
-function cetakLaporan(periode) {
-    const iframe = document.getElementById('printFrame');
-    iframe.src = 'cetak_laporan.php?periode=' + periode;
 
-    iframe.onload = () => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-    };
+function cetak(p){
+  const f=document.getElementById('f');
+  f.src='cetak_laporan.php?periode='+p;
+  f.onload=()=>f.contentWindow.print();
 }
 </script>
 
