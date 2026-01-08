@@ -36,90 +36,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <title>Tambah Pengguna | Sismontek</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f4f6fb;
-        margin: 0;
-        padding: 0;
-    }
-
-    .container {
-        width: 450px;
-        margin: 60px auto;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        padding: 30px;
-    }
-
-    h2 {
-        text-align: center;
-        color: #3f72af;
-        margin-bottom: 20px;
-    }
-
-    label {
-        font-weight: 600;
-        display: block;
-        margin-bottom: 5px;
-        color: #333;
-    }
-
-    input, select {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-    }
-
-    button {
-        width: 100%;
-        background-color: #3f72af;
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 15px;
-        transition: background 0.3s;
-    }
-
-    button:hover {
-        background-color: #2b4d75;
-    }
-
-    .success {
-        background-color: #38b000;
-        color: white;
-        padding: 10px;
-        border-radius: 6px;
-        text-align: center;
-        margin-bottom: 15px;
-    }
-
-    .error {
-        background-color: #e74c3c;
-        color: white;
-        padding: 10px;
-        border-radius: 6px;
-        text-align: center;
-        margin-bottom: 15px;
-    }
-
-    .back {
-        display: inline-block;
-        text-decoration: none;
-        color: #3f72af;
-        font-weight: 600;
-        margin-top: 10px;
-        text-align: center;
-        width: 100%;
-    }
+/* Consistent admin form styles */
+body{font-family:'Poppins',sans-serif;background:#f4f6fb;margin:0;padding:0}
+.card{background:#fff;border-radius:14px;padding:24px;box-shadow:0 8px 20px rgba(0,0,0,.06);max-width:720px;margin:60px auto}
+h2{margin-top:0;color:#1e40af;text-align:center;margin-bottom:20px}
+label{font-weight:600;display:block;margin-bottom:6px;color:#334155}
+input,select,textarea{width:100%;padding:10px;margin-bottom:14px;border:1px solid #d1d5db;border-radius:8px}
+button{width:100%;background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer}
+button:hover{background:#1e3a8a}
+.success{background:#16a34a;color:#fff;padding:10px;border-radius:6px;text-align:center;margin-bottom:15px}
+.error{background:#ef4444;color:#fff;padding:10px;border-radius:6px;text-align:center;margin-bottom:15px}
+.back{display:block;text-align:center;margin-top:10px;color:#2563eb;font-weight:600;text-decoration:none}
+@media(max-width:768px){.main{margin:0;padding:22px}}
 </style>
 </head>
 <body>
-<div class="container">
+<?php include __DIR__ . '/sidebar.php'; ?>
+<div class="main">
+  <button class="menu" onclick="sidebar.classList.toggle('show')">☰</button>
+ <div class="card">
     <h2>Tambah Pengguna Baru</h2>
 
     <?php if (isset($_GET['success'])): ?>
@@ -150,6 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </form>
 
     <a href="dashboard.php" class="back">← Kembali ke Dashboard</a>
+ </div>
 </div>
 </body>
 </html>

@@ -6,76 +6,48 @@ if (!isset($_SESSION['username'])) {
 }
 include '../database/config.php';
 
-// =================== PROSES TAMBAH JADWAL ===================
+/* ================= CRUD ================= */
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['tambah'])) {
-    $id_teknisi = $_POST['id_teknisi'];
-    $id_pelanggan = $_POST['id_pelanggan'];
-    $deskripsi = $_POST['deskripsi_pekerjaan'];
-    $tanggal = $_POST['tanggal_jadwal'];
-    $status = $_POST['status'];
-
-    $sql = "INSERT INTO jadwal (id_teknisi, id_pelanggan, deskripsi_pekerjaan, tanggal_jadwal, status)
-            VALUES ('$id_teknisi', '$id_pelanggan', '$deskripsi', '$tanggal', '$status')";
-    if ($conn->query($sql)) {
-        header("Location: jadwal.php?success=1");
-        exit;
-    } else {
-        header("Location: jadwal.php?error=" . urlencode($conn->error));
-        exit;
-    }
+    $conn->query("INSERT INTO jadwal (id_teknisi,id_pelanggan,deskripsi_pekerjaan,tanggal_jadwal,status)
+        VALUES (
+            '{$_POST['id_teknisi']}',
+            '{$_POST['id_pelanggan']}',
+            '{$_POST['deskripsi_pekerjaan']}',
+            '{$_POST['tanggal_jadwal']}',
+            '{$_POST['status']}'
+        )");
+    header("Location: jadwal.php?success=1"); exit;
 }
 
-// =================== PROSES UPDATE JADWAL ===================
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit'])) {
-    $id_jadwal = $_POST['id_jadwal'];
-    $id_teknisi = $_POST['id_teknisi'];
-    $id_pelanggan = $_POST['id_pelanggan'];
-    $deskripsi = $_POST['deskripsi_pekerjaan'];
-    $tanggal = $_POST['tanggal_jadwal'];
-    $status = $_POST['status'];
-
-    $sql = "UPDATE jadwal 
-            SET id_teknisi='$id_teknisi', id_pelanggan='$id_pelanggan', deskripsi_pekerjaan='$deskripsi', 
-                tanggal_jadwal='$tanggal', status='$status'
-            WHERE id_jadwal='$id_jadwal'";
-    if ($conn->query($sql)) {
-        header("Location: jadwal.php?updated=1");
-        exit;
-    } else {
-        header("Location: jadwal.php?error=" . urlencode($conn->error));
-        exit;
-    }
+    $conn->query("UPDATE jadwal SET
+        id_teknisi='{$_POST['id_teknisi']}',
+        id_pelanggan='{$_POST['id_pelanggan']}',
+        deskripsi_pekerjaan='{$_POST['deskripsi_pekerjaan']}',
+        tanggal_jadwal='{$_POST['tanggal_jadwal']}',
+        status='{$_POST['status']}'
+        WHERE id_jadwal='{$_POST['id_jadwal']}'
+    ");
+    header("Location: jadwal.php?updated=1"); exit;
 }
 
-// =================== PROSES HAPUS JADWAL ===================
 if (isset($_GET['hapus'])) {
-    $id = $_GET['hapus'];
-    $conn->query("DELETE FROM jadwal WHERE id_jadwal='$id'");
-    header("Location: jadwal.php?deleted=1");
-    exit;
+    $conn->query("DELETE FROM jadwal WHERE id_jadwal='{$_GET['hapus']}'");
+    header("Location: jadwal.php?deleted=1"); exit;
 }
 
-// =================== AMBIL DATA ===================
-// Ambil daftar teknisi dan nama pengguna (nama teknisi = pengguna.nama)
+/* ================= DATA ================= */
 $teknisi = $conn->query("
-    SELECT t.id_teknisi, u.nama AS nama_teknisi
-    FROM teknisi t
-    LEFT JOIN pengguna u ON t.id_pengguna = u.id_pengguna
+    SELECT t.id_teknisi,u.nama 
+    FROM teknisi t JOIN pengguna u ON t.id_pengguna=u.id_pengguna
 ");
 $pelanggan = $conn->query("SELECT * FROM pelanggan");
-
-// Ambil daftar jadwal lengkap
 $jadwal = $conn->query("
-    SELECT j.id_jadwal, 
-           u.nama AS nama_teknisi, 
-           p.nama_pelanggan, 
-           j.deskripsi_pekerjaan, 
-           j.tanggal_jadwal, 
-           j.status 
+    SELECT j.*,u.nama teknisi,p.nama_pelanggan
     FROM jadwal j
-    LEFT JOIN teknisi t ON j.id_teknisi = t.id_teknisi
-    LEFT JOIN pengguna u ON t.id_pengguna = u.id_pengguna
-    LEFT JOIN pelanggan p ON j.id_pelanggan = p.id_pelanggan
+    LEFT JOIN teknisi t ON j.id_teknisi=t.id_teknisi
+    LEFT JOIN pengguna u ON t.id_pengguna=u.id_pengguna
+    LEFT JOIN pelanggan p ON j.id_pelanggan=p.id_pelanggan
     ORDER BY j.tanggal_jadwal DESC
 ");
 ?>
@@ -85,254 +57,241 @@ $jadwal = $conn->query("
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manajemen Jadwal | Sismontek</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f4f6f9;
-        margin: 0;
-        display: flex;
-    }
+:root{
+ --bg:#f4f6fb;
+ --sidebar:#1e3a8a;
+ --card:#ffffff;
+ --border:#e5e7eb;
+ --text:#0f172a;
+ --muted:#64748b;
 
-    .sidebar {
-        width: 240px;
-        background-color: #3f72af;
-        color: white;
-        height: 100vh;
-        padding-top: 20px;
-        position: fixed;
-    }
-    .sidebar h2 {
-        text-align: center;
-        margin-bottom: 40px;
-    }
-    .sidebar a {
-        display: block;
-        color: white;
-        text-decoration: none;
-        padding: 14px 25px;
-        transition: 0.3s;
-        font-size: 15px;
-    }
-    .sidebar a:hover, .sidebar a.active {
-        background-color: #2e5c8a;
-    }
+ --primary:#2563eb;
+ --success:#16a34a;
+ --info:#0891b2;
+ --warning:#f59e0b;
+ --danger:#dc2626;
+}
 
-    .main-content {
-        margin-left: 240px;
-        padding: 30px;
-        width: 100%;
-    }
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Inter,sans-serif;
+ background:var(--bg);
+ color:var(--text);
+ display:flex;
+}
 
-    h1 {
-        color: #3f72af;
-        margin-bottom: 20px;
-    }
 
-    .form-card, .table-card {
-        background-color: #fff;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        margin-bottom: 25px;
-    }
 
-    .form-card h3, .table-card h3 {
-        margin-top: 0;
-        color: #3f72af;
-    }
 
-    form input, form select, form textarea {
-        width: 100%;
-        padding: 10px;
-        margin-top: 8px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 14px;
-    }
+/* ===== MAIN ===== */
 
-    form button {
-        background-color: #3f72af;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 15px;
-        transition: 0.3s;
-    }
+h1{
+ font-size:24px;
+ font-weight:700;
+ margin-bottom:26px;
+}
 
-    form button:hover {
-        background-color: #2e5c8a;
-    }
+/* ===== ALERT ===== */
+.alert{
+ padding:14px 20px;
+ border-radius:14px;
+ margin-bottom:18px;
+ font-size:14px;
+}
+.success{
+ background:rgba(22,163,74,.15);
+ color:var(--success);
+}
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
+/* ===== CARD ===== */
+.card{
+ background:var(--card);
+ border-radius:20px;
+ padding:26px;
+ margin-bottom:30px;
+ box-shadow:0 14px 40px rgba(0,0,0,.06);
+}
+.card h3{
+ margin:0 0 18px;
+ font-size:18px;
+ font-weight:600;
+}
 
-    table, th, td {
-        border: 1px solid #ddd;
-    }
+/* ===== FORM ===== */
+label{
+ font-size:13px;
+ color:var(--muted);
+}
+input,select,textarea{
+ width:100%;
+ border:1px solid var(--border);
+ border-radius:14px;
+ padding:12px;
+ margin:8px 0 16px;
+ font-size:14px;
+}
+textarea{resize:vertical}
 
-    th {
-        background-color: #3f72af;
-        color: white;
-        padding: 10px;
-        text-align: left;
-    }
+button{
+ background:linear-gradient(135deg,#2563eb,#60a5fa);
+ border:none;
+ color:#fff;
+ padding:12px 30px;
+ border-radius:999px;
+ font-weight:500;
+ cursor:pointer;
+ transition:.3s;
+}
+button:hover{
+ transform:translateY(-2px);
+ box-shadow:0 12px 30px rgba(37,99,235,.35);
+}
 
-    td {
-        padding: 10px;
-    }
+/* ===== TABLE ===== */
+table{
+ width:100%;
+ border-collapse:collapse;
+}
+th{
+ text-align:left;
+ font-size:12px;
+ color:var(--muted);
+ padding-bottom:14px;
+}
+td{
+ padding:16px 0;
+ border-top:1px solid var(--border);
+ font-size:14px;
+}
 
-    .status {
-        font-weight: bold;
-        text-transform: capitalize;
-        padding: 5px 10px;
-        border-radius: 8px;
-    }
+/* ===== STATUS ===== */
+.status{
+ padding:6px 14px;
+ border-radius:999px;
+ font-size:12px;
+ font-weight:500;
+}
+.dijadwalkan{
+ background:rgba(245,158,11,.18);
+ color:var(--warning);
+}
+.proses{
+ background:rgba(8,145,178,.18);
+ color:var(--info);
+}
+.selesai{
+ background:rgba(22,163,74,.18);
+ color:var(--success);
+}
 
-    .status.dijadwalkan { background: #ffb74d; color: white; }
-    .status.proses { background: #29b6f6; color: white; }
-    .status.selesai { background: #66bb6a; color: white; }
-
-    .alert {
-        padding: 10px;
-        margin-bottom: 20px;
-        border-radius: 8px;
-    }
-
-    .alert.success { background: #e8f5e9; color: #2e7d32; }
-    .alert.error { background: #ffebee; color: #c62828; }
-
-    .action-btn a {
-        padding: 6px 10px;
-        border-radius: 6px;
-        text-decoration: none;
-        color: white;
-        margin-right: 5px;
-    }
-    .action-btn .edit { background-color: #29b6f6; }
-    .action-btn .delete { background-color: #e53935; }
+/* ===== ACTION ===== */
+.action a{
+ padding:8px 18px;
+ border-radius:999px;
+ font-size:12px;
+ text-decoration:none;
+ font-weight:500;
+ margin-right:6px;
+}
+.edit{
+ background:rgba(37,99,235,.15);
+ color:var(--primary);
+}
+.delete{
+ background:rgba(220,38,38,.15);
+ color:var(--danger);
+}
 </style>
 </head>
+
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar">
-    <h2>🔧 Sismontek</h2>
-    <a href="dashboard.php">🏠 Home</a>
-    <a href="jadwal.php" class="active">🗓 Jadwal</a>
-    <a href="tambah_pengguna.php">➕ Tambah Pengguna</a>
-    <a href="pelanggan.php">👥 Pelanggan</a>
-    <a href="teknisi.php">🧑‍🔧 Teknisi</a>
-    <a href="laporan.php">📊 Laporan Kinerja</a>
-    <a href="../auth/logout.php">🚪 Logout</a>
-</div>
+<?php include __DIR__ . '/sidebar.php'; ?>
 
-<div class="main-content">
-    <h1>Manajemen Jadwal Teknisi</h1>
+<div class="main">
+  <button class="menu" onclick="sidebar.classList.toggle('show')">☰</button>
+ <h1>Manajemen Jadwal Teknisi</h1>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div class="alert success">✅ Jadwal berhasil ditambahkan!</div>
-    <?php elseif (isset($_GET['updated'])): ?>
-        <div class="alert success">✅ Jadwal berhasil diperbarui!</div>
-    <?php elseif (isset($_GET['deleted'])): ?>
-        <div class="alert success">🗑 Jadwal berhasil dihapus!</div>
-    <?php elseif (isset($_GET['error'])): ?>
-        <div class="alert error">❌ Terjadi kesalahan: <?= htmlspecialchars($_GET['error']); ?></div>
-    <?php endif; ?>
+ <?php if(isset($_GET['success'])): ?><div class="alert success">Jadwal berhasil ditambahkan</div><?php endif ?>
+ <?php if(isset($_GET['updated'])): ?><div class="alert success">Jadwal berhasil diperbarui</div><?php endif ?>
+ <?php if(isset($_GET['deleted'])): ?><div class="alert success">Jadwal berhasil dihapus</div><?php endif ?>
 
-    <!-- Form tambah jadwal -->
-    <div class="form-card">
-        <h3>Tambah Jadwal Baru</h3>
-        <form method="POST" action="">
-            <input type="hidden" name="id_jadwal" id="id_jadwal">
-            <label for="id_teknisi">Pilih Teknisi</label>
-            <select name="id_teknisi" id="id_teknisi" required>
-                <option value="">-- Pilih Teknisi --</option>
-                <?php
-                $teknisi->data_seek(0);
-                while ($t = $teknisi->fetch_assoc()):
-                ?>
-                    <option value="<?= $t['id_teknisi']; ?>"><?= $t['nama_teknisi']; ?></option>
-                <?php endwhile; ?>
-            </select>
+ <div class="card">
+  <h3>Tambah / Edit Jadwal</h3>
+  <form method="POST">
+   <input type="hidden" name="id_jadwal" id="id_jadwal">
 
-            <label for="id_pelanggan">Pilih Pelanggan</label>
-            <select name="id_pelanggan" id="id_pelanggan" required>
-                <option value="">-- Pilih Pelanggan --</option>
-                <?php
-                $pelanggan->data_seek(0);
-                while ($p = $pelanggan->fetch_assoc()):
-                ?>
-                    <option value="<?= $p['id_pelanggan']; ?>"><?= $p['nama_pelanggan']; ?> (<?= $p['paket']; ?>)</option>
-                <?php endwhile; ?>
-            </select>
+   <label>Teknisi</label>
+   <select name="id_teknisi" id="id_teknisi">
+    <?php while($t=$teknisi->fetch_assoc()): ?>
+     <option value="<?= $t['id_teknisi'] ?>"><?= $t['nama'] ?></option>
+    <?php endwhile ?>
+   </select>
 
-            <label for="deskripsi_pekerjaan">Deskripsi Pekerjaan</label>
-            <textarea name="deskripsi_pekerjaan" id="deskripsi_pekerjaan" rows="3" required></textarea>
+   <label>Pelanggan</label>
+   <select name="id_pelanggan" id="id_pelanggan">
+    <?php while($p=$pelanggan->fetch_assoc()): ?>
+     <option value="<?= $p['id_pelanggan'] ?>"><?= $p['nama_pelanggan'] ?></option>
+    <?php endwhile ?>
+   </select>
 
-            <label for="tanggal_jadwal">Tanggal Jadwal</label>
-            <input type="date" name="tanggal_jadwal" id="tanggal_jadwal" required>
+   <label>Deskripsi</label>
+   <textarea name="deskripsi_pekerjaan" id="deskripsi_pekerjaan"></textarea>
 
-            <label for="status">Status</label>
-            <select name="status" id="status" required>
-                <option value="dijadwalkan">Dijadwalkan</option>
-                <option value="proses">Proses</option>
-                <option value="selesai">Selesai</option>
-            </select>
+   <label>Tanggal</label>
+   <input type="date" name="tanggal_jadwal" id="tanggal_jadwal">
 
-            <button type="submit" name="tambah" id="btn-submit">+ Tambah Jadwal</button>
-        </form>
-    </div>
+   <label>Status</label>
+   <select name="status" id="status">
+    <option value="dijadwalkan">Dijadwalkan</option>
+    <option value="proses">Proses</option>
+    <option value="selesai">Selesai</option>
+   </select>
 
-    <!-- Tabel daftar jadwal -->
-    <div class="table-card">
-        <h3>Daftar Jadwal Teknisi</h3>
-        <table>
-            <tr>
-                <th>Nama Teknisi</th>
-                <th>Nama Pelanggan</th>
-                <th>Deskripsi</th>
-                <th>Tanggal</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-            <?php if ($jadwal && $jadwal->num_rows > 0): ?>
-                <?php while ($j = $jadwal->fetch_assoc()): ?>
-                <tr>
-                    <td><?= $j['nama_teknisi'] ?: '-'; ?></td>
-                    <td><?= $j['nama_pelanggan'] ?: '-'; ?></td>
-                    <td><?= $j['deskripsi_pekerjaan']; ?></td>
-                    <td><?= $j['tanggal_jadwal']; ?></td>
-                    <td><span class="status <?= strtolower($j['status']); ?>"><?= ucfirst($j['status']); ?></span></td>
-                    <td class="action-btn">
-                        <a href="javascript:void(0)" class="edit" 
-                           onclick="editData('<?= $j['id_jadwal']; ?>','<?= $j['nama_teknisi']; ?>','<?= $j['nama_pelanggan']; ?>','<?= htmlspecialchars($j['deskripsi_pekerjaan']); ?>','<?= $j['tanggal_jadwal']; ?>','<?= $j['status']; ?>')">
-                           ✏ Edit
-                        </a>
-                        <a href="jadwal.php?hapus=<?= $j['id_jadwal']; ?>" class="delete" onclick="return confirm('Yakin ingin menghapus jadwal ini?')">🗑 Hapus</a>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <tr><td colspan="6">Belum ada jadwal teknisi.</td></tr>
-            <?php endif; ?>
-        </table>
-    </div>
+   <button id="btn" name="tambah">Simpan Jadwal</button>
+  </form>
+ </div>
+
+ <div class="card">
+  <h3>Daftar Jadwal Teknisi</h3>
+  <table>
+   <tr>
+    <th>Teknisi</th>
+    <th>Pelanggan</th>
+    <th>Tanggal</th>
+    <th>Status</th>
+    <th>Aksi</th>
+   </tr>
+   <?php while($j=$jadwal->fetch_assoc()): ?>
+   <tr>
+    <td><?= $j['teknisi'] ?></td>
+    <td><?= $j['nama_pelanggan'] ?></td>
+    <td><?= date('d M Y',strtotime($j['tanggal_jadwal'])) ?></td>
+    <td><span class="status <?= $j['status'] ?>"><?= ucfirst($j['status']) ?></span></td>
+    <td class="action">
+     <a class="edit" onclick='editData(<?= json_encode($j) ?>)'>Edit</a>
+     <a class="delete" href="?hapus=<?= $j['id_jadwal'] ?>" onclick="return confirm('Hapus jadwal?')">Hapus</a>
+    </td>
+   </tr>
+   <?php endwhile ?>
+  </table>
+ </div>
 </div>
 
 <script>
-function editData(id, teknisi, pelanggan, deskripsi, tanggal, status) {
-    document.getElementById('id_jadwal').value = id;
-    document.getElementById('deskripsi_pekerjaan').value = deskripsi;
-    document.getElementById('tanggal_jadwal').value = tanggal;
-    document.getElementById('status').value = status;
-    document.getElementById('btn-submit').name = 'edit';
-    document.getElementById('btn-submit').innerText = '💾 Simpan Perubahan';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+function editData(d){
+ id_jadwal.value=d.id_jadwal;
+ deskripsi_pekerjaan.value=d.deskripsi_pekerjaan;
+ tanggal_jadwal.value=d.tanggal_jadwal;
+ status.value=d.status;
+ btn.name='edit';
+ btn.innerText='Update Jadwal';
+ window.scrollTo({top:0,behavior:'smooth'});
 }
 </script>
 
