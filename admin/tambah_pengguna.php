@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($nama && $username && $password && $role) {
 
-        // 🔍 CEK USERNAME SUDAH ADA ATAU BELUM
+        // CEK USERNAME SUDAH ADA ATAU BELUM
         $cek = $conn->prepare("SELECT id_pengguna FROM pengguna WHERE username = ?");
         $cek->bind_param("s", $username);
         $cek->execute();
@@ -194,7 +194,7 @@ input:focus,select:focus{
 
 <body>
 
-<?php include __DIR__ . '/sidebar.php'; ?>
+<?php include __DIR__ . '/../layout/sidebar.php'; ?>
 
 <main>
 

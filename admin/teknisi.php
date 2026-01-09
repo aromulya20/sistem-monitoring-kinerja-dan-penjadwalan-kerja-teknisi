@@ -173,7 +173,7 @@ td{
 
 <body>
 
-<?php include __DIR__ . '/sidebar.php'; ?>
+<?php include __DIR__ . '/../layout/sidebar.php'; ?>
 
 <main>
 

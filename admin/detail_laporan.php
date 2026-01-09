@@ -44,7 +44,6 @@ $result = $stmt->get_result();
 
 $data = $result->fetch_assoc();
 
-// PENGAMAN WAJIB
 if (!$data) {
     echo "<div style='text-align:center;margin-top:50px'>
             <h2>Data laporan tidak ditemukan</h2>

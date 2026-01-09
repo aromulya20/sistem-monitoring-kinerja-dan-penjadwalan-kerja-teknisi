@@ -21,7 +21,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($result->num_rows > 0) {
         $data = $result->fetch_assoc();
 
-        // Karena password belum di-hash, kita bandingkan langsung
         if ($password === $data['password']) {
 
             // Simpan data ke session

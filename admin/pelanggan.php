@@ -63,7 +63,7 @@ $pelanggan = $conn->query("SELECT * FROM pelanggan ORDER BY id_pelanggan DESC");
 <body class="bg-slate-100">
 
 <!-- SIDEBAR -->
-<?php include __DIR__ . '/sidebar.php'; ?>
+<?php include __DIR__ . '/../layout/sidebar.php'; ?>
 
 <!-- KONTEN -->
 <main class="ml-64 min-h-screen p-8">

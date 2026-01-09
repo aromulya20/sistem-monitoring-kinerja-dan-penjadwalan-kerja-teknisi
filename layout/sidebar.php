@@ -1,60 +1,65 @@
 <?php
+// Shared sidebar for admin pages
 $current = basename($_SERVER['PHP_SELF']);
 ?>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* Shared admin sidebar styles */
+.sidebar{
+ width:260px;
+ height:100vh;
+ position:fixed;
+ background:linear-gradient(180deg,#1e3a8a,#2563eb);
+ color:#fff;
+ z-index:1000;
+}
+.brand{
+ padding:26px;
+ font-size:20px;
+ font-weight:700;
+ letter-spacing:.5px;
+}
+.nav a{
+ display:block;
+ padding:14px 26px;
+ color:#e0e7ff;
+ text-decoration:none;
+ font-size:14px;
+}
+.nav a.active,
+.nav a:hover{
+ background:rgba(255,255,255,.18);
+}
 
-<aside class="fixed top-0 left-0 w-64 h-screen bg-blue-700 text-white z-40">
+/* Keep layout consistent for pages */
+.main{margin-left:260px;padding:30px}
 
-  <!-- LOGO -->
-  <div class="px-6 py-6 border-b border-blue-600">
-    <h2 class="text-xl font-bold flex items-center gap-2">
-      <i class="fa-solid fa-screwdriver-wrench"></i>
-      SISMONTEK
-    </h2>
-  </div>
+/* Mobile */
+.menu{display:none}
+@media(max-width:768px){
+ .sidebar{left:-100%}
+ .sidebar.show{left:0}
+ .main{margin:0;padding:22px}
+ .menu{display:block;font-size:22px;background:none;border:none;color:var(--text)}
+}
+</style>
 
-  <!-- MENU -->
-  <nav class="px-4 py-6 space-y-2 text-sm">
+<div class="sidebar" id="sidebar">
+ <div class="brand">🔧 SISMONTEK</div>
+ <div class="nav">
+  <a href="dashboard.php" class="<?= $current=='dashboard.php' ? 'active' : '' ?>">Dashboard</a>
+  <a href="jadwal.php" class="<?= $current=='jadwal.php' ? 'active' : '' ?>">Jadwal</a>
+  <a href="pelanggan.php" class="<?= $current=='pelanggan.php' ? 'active' : '' ?>">Pelanggan</a>
+  <a href="teknisi.php" class="<?= $current=='teknisi.php' ? 'active' : '' ?>">Teknisi</a>
+  <a href="laporan.php" class="<?= $current=='laporan.php' ? 'active' : '' ?>">Laporan</a>
+  <a href="tambah_pengguna.php" class="<?= $current=='tambah_pengguna.php' ? 'active' : '' ?>">Tambah Pengguna</a>
+  <a href="../auth/logout.php">Logout</a>
+ </div>
+</div>
 
-    <a href="dashboard.php"
-       class="flex items-center gap-3 px-4 py-3 rounded-lg
-       <?= $current=='dashboard.php' ? 'bg-blue-600' : 'hover:bg-blue-600/60' ?>">
-      <i class="fa-solid fa-gauge"></i> Dashboard
-    </a>
-
-    <a href="jadwal.php"
-       class="flex items-center gap-3 px-4 py-3 rounded-lg
-       <?= $current=='jadwal.php' ? 'bg-blue-600' : 'hover:bg-blue-600/60' ?>">
-      <i class="fa-solid fa-calendar-days"></i> Jadwal
-    </a>
-
-    <a href="pelanggan.php"
-       class="flex items-center gap-3 px-4 py-3 rounded-lg
-       <?= $current=='pelanggan.php' ? 'bg-blue-600' : 'hover:bg-blue-600/60' ?>">
-      <i class="fa-solid fa-users"></i> Pelanggan
-    </a>
-
-    <a href="teknisi.php"
-       class="flex items-center gap-3 px-4 py-3 rounded-lg
-       <?= $current=='teknisi.php' ? 'bg-blue-600' : 'hover:bg-blue-600/60' ?>">
-      <i class="fa-solid fa-user-gear"></i> Teknisi
-    </a>
-
-    <a href="laporan.php"
-       class="flex items-center gap-3 px-4 py-3 rounded-lg
-       <?= $current=='laporan.php' ? 'bg-blue-600' : 'hover:bg-blue-600/60' ?>">
-      <i class="fa-solid fa-file-lines"></i> Laporan
-    </a>
-
-  </nav>
-
-  <!-- LOGOUT -->
-  <div class="absolute bottom-0 w-full px-6 py-4 border-t border-blue-600">
-    <a href="../auth/logout.php"
-       class="flex items-center gap-3 text-red-200 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
-  </div>
-
-</aside>
+<script>
+// Allow menu button to toggle sidebar on mobile
+document.querySelector('.menu')?.addEventListener('click', function(){
+  document.getElementById('sidebar')?.classList.toggle('show');
+});
+</script>
